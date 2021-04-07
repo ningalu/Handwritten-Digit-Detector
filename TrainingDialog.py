@@ -1,4 +1,5 @@
 from __future__ import print_function
+from math import ceil
 
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
@@ -76,34 +77,40 @@ class TrainingDialog(QDialog):
         self.setLayout(self.mainVBoxLayout)
 
     def downloadMNIST(self): #Downloads both the train and test sets, but only one download=True needed so test omitted
+        self.progressTextBox.setText('')
         self.progressTextBox.append("Downloading train dataset...")
-
+        # Needed for the GUI to update when the app stops responding
+        QApplication.processEvents()
+         
         # MNIST Dataset
         train_dataset = datasets.MNIST(root='mnist_data/',
                                        train=True,
                                        transform=transforms.ToTensor(),
                                        download=True)
-
+        
+        self.progressBar.setValue(99)
         self.progressTextBox.append("Downloading test dataset...")
+        self.progressBar.setValue(100)
         self.progressTextBox.append("MNIST Dataset successfully downloaded.")
+        self.progressBar.setValue(0)
+
+        return train_dataset
 
     def trainModel(self):
-        self.progressTextBox.append("Training...")
-
         # Training settings
         batch_size = 64
         device = 'cuda' if cuda.is_available() else 'cpu'
         print(f'Training MNIST Model on {device}\n{"=" * 44}')
 
         # MNIST Dataset
-        train_dataset = datasets.MNIST(root='mnist_data/',
-                                       train=True,
-                                       transform=transforms.ToTensor(),
-                                       download=True)
+        train_dataset = self.downloadMNIST()
 
         test_dataset = datasets.MNIST(root='mnist_data/',
                                       train=False,
                                       transform=transforms.ToTensor())
+
+        self.progressTextBox.setText('')
+        self.progressTextBox.append("Training...")
 
         # Data Loader (Input Pipeline)
         train_loader = data.DataLoader(dataset=train_dataset,
@@ -157,6 +164,9 @@ class TrainingDialog(QDialog):
             model.eval()
             test_loss = 0
             correct = 0
+
+            accuracy = 0.0
+
             for data, target in test_loader:
                 data, target = data.to(device), target.to(device)
                 output = model(data)
@@ -170,20 +180,38 @@ class TrainingDialog(QDialog):
             print(f'===========================\nTest set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} '
                   f'({100. * correct / len(test_loader.dataset):.0f}%)')
 
+            accuracy = 100 *  correct/len(test_loader.dataset)
+            return accuracy
+
         if __name__ == '__main__':
+            overallAccuracy = 0.0
+
             since = time.time()
             for epoch in range(1, 10):
+                self.progressTextBox.append(f"Training Epoch: {epoch}")
+                self.progressBar.setValue(ceil((epoch - 1) * (100/9)))
+                # Needed for the GUI to update when the app stops responding
+                QApplication.processEvents() 
+
                 epoch_start = time.time()
                 train(epoch)
                 m, s = divmod(time.time() - epoch_start, 60)
                 print(f'Training time: {m:.0f}m {s:.0f}s')
-                test()
+
+                if (epoch == 9):
+                    overallAccuracy = test()
+                else:
+                    test()
+
                 m, s = divmod(time.time() - epoch_start, 60)
                 print(f'Testing time: {m:.0f}m {s:.0f}s')
 
             m, s = divmod(time.time() - since, 60)
+
             print(
                 f'Total Time: {m:.0f}m {s:.0f}s\nModel was trained on {device}!')
+            self.progressTextBox.append(f"Overall accuracy: {overallAccuracy:.0f}%")
+            self.progressBar.setValue(0)
 
 
 if __name__ == '__main__':
