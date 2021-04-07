@@ -1,5 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QWidget, QDesktopWidget, qApp, QHBoxLayout, QVBoxLayout, QGridLayout
+from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QMenuBar, QPushButton, QLabel, QLineEdit, QFrame
 
 
@@ -18,16 +19,16 @@ class App(QMainWindow):
         self.show()
 
     def centreWindow(self):
-        qr = self.frameGeometry()
-        cp = QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
+        # qr = self.frameGeometry()
+        # cp = QDesktopWidget().availableGeometry().center()
+        # qr.moveCenter(cp)
+        # self.move(qr.topLeft())
         self.resize(480, 360)
 
     def createMenuBar(self):
         # Create Actions
         trainModelAct = QAction('&Train Model', self)
-        #trainModelAct.triggered.connect()
+        trainModelAct.triggered.connect(self.showTrainingDialog)
         exitAct = QAction('&Quit', self)
         exitAct.triggered.connect(qApp.quit)
 
@@ -106,6 +107,15 @@ class App(QMainWindow):
         self.classProbLayout.addWidget(QLineEdit('Graph of class probability'))
         self.classProbLayout.addWidget(QLineEdit('Class detected'))
 
+    def showTrainingDialog(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle('Model Training Options')
+        dialog.resize(320, 180)
+        QPushButton('Download MNIST', dialog)
+        QPushButton('Train', dialog)
+        QPushButton('Cancel', dialog)
+        dialog.show()
+        
 
 if __name__ == '__main__':
    app = QApplication(sys.argv)
