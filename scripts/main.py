@@ -1,7 +1,8 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QWidget, QDesktopWidget, qApp, QHBoxLayout, QVBoxLayout, QGridLayout
-from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QMenuBar, QPushButton, QLabel, QLineEdit, QFrame
+
+from TrainingDialog import TrainingDialog
 
 
 class App(QMainWindow):
@@ -108,14 +109,9 @@ class App(QMainWindow):
         self.classProbLayout.addWidget(QLineEdit('Class detected'))
 
     def showTrainingDialog(self):
-        dialog = QDialog(self)
-        dialog.setWindowTitle('Model Training Options')
-        dialog.resize(320, 180)
-        QPushButton('Download MNIST', dialog)
-        QPushButton('Train', dialog)
-        QPushButton('Cancel', dialog)
-        dialog.show()
-        
+        self.trainingDialog = TrainingDialog(self)
+        self.trainingDialog.exec_()
+
 
 if __name__ == '__main__':
    app = QApplication(sys.argv)
