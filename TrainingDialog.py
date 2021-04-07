@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QWidget, QDesktopWidget, qApp, QHBoxLayout, QVBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QDialog
-from PyQt5.QtWidgets import QMenuBar, QPushButton, QLabel, QLineEdit, QFrame
+from PyQt5.QtWidgets import QMenuBar, QPushButton, QLabel, QTextEdit, QFrame, QProgressBar
 
 
 class TrainingDialog(QDialog):
@@ -25,12 +25,27 @@ class TrainingDialog(QDialog):
         self.resize(320, 180)
 
     def createWidgetLayouts(self):
-        # Create widgets
+        # Create text box for progress text
+        self.progressTextBox = QTextEdit()
+        self.progressTextBox.setReadOnly(True)
+
+        # Create text box layout and add widget
+        self.progressTextLayout = QVBoxLayout()
+        self.progressTextLayout.addWidget(self.progressTextBox)
+        
+        # Create progress bar
+        self.progressBar = QProgressBar()
+
+        # Create bar layout and add widget
+        self.progressBarLayout = QVBoxLayout()
+        self.progressBarLayout.addWidget(self.progressBar)
+
+        # Create buttons
         self.downloadButton = QPushButton("Download MNIST")
         self.trainButton = QPushButton("Train")
         self.cancelButton = QPushButton("Cancel")
 
-        # Create layout and add widgets
+        # Create button layout and add widgets
         self.buttonLayout = QHBoxLayout()
         self.buttonLayout.addWidget(self.downloadButton)
         self.buttonLayout.addWidget(self.trainButton)
@@ -41,6 +56,8 @@ class TrainingDialog(QDialog):
         self.mainVBoxLayout = QVBoxLayout()
 
         # Add our widget layouts to the mainVLayout
+        self.mainVBoxLayout.addLayout(self.progressTextLayout)
+        self.mainVBoxLayout.addLayout(self.progressBarLayout)
         self.mainVBoxLayout.addLayout(self.buttonLayout)
 
         # Add mainVLayout to this classes layout
