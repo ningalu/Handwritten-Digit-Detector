@@ -11,7 +11,8 @@ class App(QMainWindow):
     def initUI(self):
         self.setWindowTitle('Handwritten Digit Recognizer')
         self.createMenuBar()
-        self.createLayout()
+        self.createWidgetLayouts()
+        self.createCentralLayout()
 
         self.centreWindow()
         self.show()
@@ -47,7 +48,7 @@ class App(QMainWindow):
         viewMenu.addAction(viewTrainImgsAct)
         viewMenu.addAction(viewTestImgsAct)
 
-    def createLayout(self):
+    def createCentralLayout(self):
         # Create a central QWidget that can be displayed in QMainWindow
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
@@ -57,40 +58,12 @@ class App(QMainWindow):
         leftBox = QVBoxLayout()
         rightBox = QVBoxLayout()
 
-        # -- Creating Left Side of Layout
-        # Create a layout for the drawing canvas
-        canvasLayout = QVBoxLayout()
-        # Add widgets
-        self.canvas = QFrame(self)
-        self.canvas.setGeometry(150, 20, 100, 100)
-        self.canvas.setStyleSheet(
-            "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
-        canvasLayout.addWidget(self.canvas)
+        # Add required widget layouts to leftBox
+        leftBox.addLayout(self.canvasLayout)
 
-        # Add required layouts to leftBox
-        leftBox.addLayout(canvasLayout)
-
-        # -- Creating Right Side of Layout
-        # Create buttonLayout (a vbox) and assign four buttons to it
-        buttonLayout = QVBoxLayout()
-        # Add all required buttons to the box
-        buttonLayout.setSpacing(0)
-        buttonLayout.setContentsMargins(0, 0, 0, 0)
-        buttonLayout.addWidget(QPushButton('Clear'))
-        buttonLayout.addWidget(QPushButton('Random'))
-        buttonLayout.addWidget(QPushButton('Model'))
-        buttonLayout.addWidget(QPushButton('Recognize'))
-
-        # Create a layout for the class probability display
-        classProbLayout = QVBoxLayout()
-        # Add widgets
-        classProbLayout.addWidget(QLabel('Class Probability'))
-        classProbLayout.addWidget(QLineEdit('Graph of class probability'))
-        classProbLayout.addWidget(QLineEdit('Class detected'))
-
-        # Add required layouts to rightBox
-        rightBox.addLayout(buttonLayout)
-        rightBox.addLayout(classProbLayout)
+        # Add required widget layouts to rightBox
+        rightBox.addLayout(self.buttonLayout)
+        rightBox.addLayout(self.classProbLayout)
 
         # Add left and right boxes (containing our widget layouts) to grid
         grid.addLayout(leftBox, 0, 0)
@@ -102,6 +75,36 @@ class App(QMainWindow):
 
         #Set central widget's layout to our grid
         self.centralWidget.setLayout(grid)
+
+    def createWidgetLayouts(self):
+        # -- Creating Left Side of Layout
+        # Create a box layout for the canvas
+        self.canvasLayout = QVBoxLayout()
+        # Create canvas widget
+        self.canvas = QFrame(self)
+        self.canvas.setStyleSheet(
+            "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
+        # Add canvas widget to canvas layout
+        self.canvasLayout.addWidget(self.canvas)
+
+        # -- Creating Right Side of Layout
+        # Create a buttonLayout (a vbox)
+        self.buttonLayout = QVBoxLayout()
+        # Style buttons
+        self.buttonLayout.setSpacing(0)
+        self.buttonLayout.setContentsMargins(0, 0, 0, 0)
+        # Add buttons to the box
+        self.buttonLayout.addWidget(QPushButton('Clear'))
+        self.buttonLayout.addWidget(QPushButton('Random'))
+        self.buttonLayout.addWidget(QPushButton('Model'))
+        self.buttonLayout.addWidget(QPushButton('Recognize'))
+
+        # Create a layout for the class probability display
+        self.classProbLayout = QVBoxLayout()
+        # Add widgets to the box
+        self.classProbLayout.addWidget(QLabel('Class Probability'))
+        self.classProbLayout.addWidget(QLineEdit('Graph of class probability'))
+        self.classProbLayout.addWidget(QLineEdit('Class detected'))
 
 
 if __name__ == '__main__':
