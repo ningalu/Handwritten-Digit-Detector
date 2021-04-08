@@ -15,8 +15,10 @@ import time
 
 class TrainingDialog(QDialog):
 
-    def __init__(self, parent=None):
+    def __init__(self):
         super().__init__()
+        self.train_dataset = []
+        self.test_dataset = []
         self.initUI()
 
     def initUI(self):
@@ -84,10 +86,10 @@ class TrainingDialog(QDialog):
         QApplication.processEvents()
 
         # MNIST Dataset
-        train_dataset = datasets.MNIST(root='./mnist_data/',
-                                       train=True,
-                                       transform=transforms.ToTensor(),
-                                       download=True)
+        self.train_dataset = datasets.MNIST(root='./mnist_data/',
+                                            train=True,
+                                            transform=transforms.ToTensor(),
+                                            download=True)
 
         self.progressBar.setValue(99)
         self.progressTextBox.append("Downloading test dataset...")
@@ -97,7 +99,7 @@ class TrainingDialog(QDialog):
         self.progressTextBox.append("MNIST Dataset successfully downloaded.")
         self.progressBar.setValue(0)
 
-        return train_dataset
+        # return train_dataset
 
     def trainModel(self):
         # Training settings
@@ -106,21 +108,22 @@ class TrainingDialog(QDialog):
         print(f'Training MNIST Model on {device}\n{"=" * 44}')
 
         # MNIST Dataset
-        train_dataset = self.downloadMNIST()
+        #self.train_dataset = self.downloadMNIST()
+        self.downloadMNIST()
 
-        test_dataset = datasets.MNIST(root='./mnist_data/',
-                                      train=False,
-                                      transform=transforms.ToTensor())
+        self.test_dataset = datasets.MNIST(root='./mnist_data/',
+                                           train=False,
+                                           transform=transforms.ToTensor())
 
         self.progressTextBox.setText('')
         self.progressTextBox.append("Training...")
 
         # Data Loader (Input Pipeline)
-        train_loader = data.DataLoader(dataset=train_dataset,
+        train_loader = data.DataLoader(dataset=self.train_dataset,
                                        batch_size=batch_size,
                                        shuffle=True)
 
-        test_loader = data.DataLoader(dataset=test_dataset,
+        test_loader = data.DataLoader(dataset=self.test_dataset,
                                       batch_size=batch_size,
                                       shuffle=False)
 
@@ -216,3 +219,11 @@ class TrainingDialog(QDialog):
             self.progressTextBox.append(
                 f"Overall accuracy: {overallAccuracy:.0f}%")
             self.progressBar.setValue(0)
+
+    def getTrainSet(self):
+
+        return self.train_dataset
+
+    def getTestSet(self):
+
+        return self.test_dataset

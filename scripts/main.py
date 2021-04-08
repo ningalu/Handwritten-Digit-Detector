@@ -1,13 +1,18 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QWidget, QDesktopWidget, qApp, QHBoxLayout, QVBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QMenuBar, QPushButton, QLabel, QLineEdit, QFrame
+from PyQt5.QtWidgets import QMessageBox
 
 from TrainingDialog import TrainingDialog
+from ViewImagesDialog import ViewImagesDialog
 
 
 class App(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.trainingDialog = 0
+        self.viewTrainImagesDialog = 0
+        self.viewTestImagesDialog = 0
         self.initUI()
 
     def initUI(self):
@@ -34,9 +39,9 @@ class App(QMainWindow):
         exitAct.triggered.connect(qApp.quit)
 
         viewTrainImgsAct = QAction('&View Training Images', self)
-        #viewTrainImgsAct.triggered.connect()
+        viewTrainImgsAct.triggered.connect(self.showTrainImagesDialog)
         viewTestImgsAct = QAction('&View Testing Images', self)
-        #viewTestImgsAct.triggered.connect()
+        viewTestImgsAct.triggered.connect(self.showTestImagesDialog)
 
         # Create MenuBar
         menubar = self.menuBar()
@@ -109,8 +114,38 @@ class App(QMainWindow):
         self.classProbLayout.addWidget(QLineEdit('Class detected'))
 
     def showTrainingDialog(self):
-        self.trainingDialog = TrainingDialog(self)
+        self.trainingDialog = TrainingDialog()
         self.trainingDialog.exec_()
+
+    def showTrainImagesDialog(self):
+        try: # Check if the dataset has been acquired by the trainingDialog yet
+            self.train_dataset = self.trainingDialog.getTrainSet()
+        except AttributeError: # If not let the user know they have to get the dataset before viewing images
+            dataMissingDialog = QMessageBox()
+            dataMissingDialog.setWindowTitle('Data Missing')
+            dataMissingDialog.setIcon(QMessageBox.Critical)
+            dataMissingDialog.setText("The training dataset is missing.")
+            dataMissingDialog.setInformativeText("Make sure you go to File > Train Model and click 'Download MNIST' first.")
+
+            dataMissingDialog.exec_();
+        else: # Otherwise execure the trainImagesDialog
+            self.viewTrainImagesDialog = ViewImagesDialog('View Training Images', self.train_dataset)
+            self.viewTrainImagesDialog.exec_()
+
+    def showTestImagesDialog(self):
+        try: # Check if the dataset has been acquired by the trainingDialog yet
+            self.test_dataset = self.trainingDialog.getTestSet()
+        except AttributeError: # If not let the user know they have to get the dataset before viewing images
+            dataMissingDialog = QMessageBox()
+            dataMissingDialog.setWindowTitle('Data Missing')
+            dataMissingDialog.setIcon(QMessageBox.Critical)
+            dataMissingDialog.setText("The test dataset is missing.")
+            dataMissingDialog.setInformativeText("Make sure you go to File > Train Model and click 'Download MNIST' first.")
+
+            dataMissingDialog.exec_();
+        else: # Otherwise execure the trainImagesDialog
+            self.viewTrainImagesDialog = ViewImagesDialog('View Test Images', self.test_dataset)
+            self.viewTrainImagesDialog.exec_()
 
 
 if __name__ == '__main__':
