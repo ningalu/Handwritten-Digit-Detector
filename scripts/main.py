@@ -118,33 +118,38 @@ class App(QMainWindow):
         self.trainingDialog.exec_()
 
     def showTrainImagesDialog(self):
-        try: # Check if the dataset has been acquired by the trainingDialog yet
+        try:  # Check if the dataset has been acquired by the trainingDialog yet
             self.train_dataset = self.trainingDialog.getTrainSet()
-        except AttributeError: # If not let the user know they have to get the dataset before viewing images
+        except AttributeError:  # If not let the user know they have to get the dataset before viewing images
             dataMissingDialog = QMessageBox()
             dataMissingDialog.setWindowTitle('Data Missing')
             dataMissingDialog.setIcon(QMessageBox.Critical)
             dataMissingDialog.setText("The training dataset is missing.")
-            dataMissingDialog.setInformativeText("Make sure you go to File > Train Model and click 'Download MNIST' first.")
+            dataMissingDialog.setInformativeText(
+                "Make sure you go to File > Train Model and click 'Download MNIST' first.")
 
-            dataMissingDialog.exec_();
-        else: # Otherwise execure the trainImagesDialog
-            self.viewTrainImagesDialog = ViewImagesDialog('View Training Images', self.train_dataset)
+            dataMissingDialog.exec_()
+        else:  # Otherwise create and execute the trainImagesDialog
+            self.viewTrainImagesDialog = ViewImagesDialog(
+                'View Training Images', self.train_dataset)
             self.viewTrainImagesDialog.exec_()
 
     def showTestImagesDialog(self):
-        try: # Check if the dataset has been acquired by the trainingDialog yet
+        try:  # Check if the dataset has been acquired by the trainingDialog yet
             self.test_dataset = self.trainingDialog.getTestSet()
-        except AttributeError: # If not let the user know they have to get the dataset before viewing images
+        except AttributeError:  # If not let the user know they have to get the dataset before viewing images
             dataMissingDialog = QMessageBox()
             dataMissingDialog.setWindowTitle('Data Missing')
             dataMissingDialog.setIcon(QMessageBox.Critical)
             dataMissingDialog.setText("The test dataset is missing.")
-            dataMissingDialog.setInformativeText("Make sure you go to File > Train Model and click 'Download MNIST' first.")
+            dataMissingDialog.setInformativeText(
+                "Make sure you go to File > Train Model and click 'Download MNIST' first.")
 
-            dataMissingDialog.exec_();
-        else: # Otherwise execure the trainImagesDialog
-            self.viewTrainImagesDialog = ViewImagesDialog('View Test Images', self.test_dataset)
+            dataMissingDialog.exec_()
+        else:  # Otherwise create and execute the trainImagesDialog
+            print(self.test_dataset)
+            self.viewTrainImagesDialog = ViewImagesDialog(
+                'View Test Images', self.test_dataset)
             self.viewTrainImagesDialog.exec_()
 
 

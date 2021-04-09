@@ -142,3 +142,6 @@ cython_debug/
 
 # MNIST
 mnist_data/
+
+# images
+images/
