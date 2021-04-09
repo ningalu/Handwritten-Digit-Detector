@@ -3,7 +3,7 @@ from math import ceil
 
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QFileDialog
 from PyQt5.QtWidgets import QPushButton, QTextEdit, QProgressBar, QLabel
 from PyQt5.QtGui import QIcon, QPixmap
 
@@ -62,36 +62,34 @@ class ViewImagesDialog(QDialog):
         self.imageLayout = QVBoxLayout()
         self.imageLayout.addWidget(self.imageLabel)
 
-        # Create the buttons needed
+        # Create the buttons needed and put them in their own HBox
         self.previousButton = QPushButton('Previous')
-        self.previousButton.clicked.connect(self.prevViewImage)
+        self.previousButton.clicked.connect(self.prevImage)
         self.nextButton = QPushButton('Next')
-        self.nextButton.clicked.connect(self.nextViewImage)
+        self.nextButton.clicked.connect(self.nextImage)
 
-        # selectButton = QPushButton('Select image')
-        # menu = QMenu(self)
-        # menu.addAction('First Item')
-        # menu.addAction('Second Item')
-        # menu.addAction('Third Item')
-        # menu.addAction('Fourth Item')
-        # popupbutton.setMenu(menu)
+        self.navLayout = QHBoxLayout()
+        self.navLayout.addWidget(self.previousButton)
+        self.navLayout.addWidget(self.nextButton)
+
+        self.selectButton = QPushButton('Select image')
+        self.selectButton.clicked.connect(self.openImageFileDialog)
 
         # Create buttonLayout and add the buttons to it
         self.buttonLayout = QVBoxLayout()
-        self.buttonLayout.addWidget(self.previousButton)
-        self.buttonLayout.addWidget(self.nextButton)
-        # self.buttonLayout.addWidget(selectButton)
+        self.buttonLayout.addLayout(self.navLayout)
+        self.buttonLayout.addWidget(self.selectButton)
 
     def createDialogLayout(self):
         # Create a main HBoxLayout
-        self.mainHBoxLayout = QHBoxLayout()
+        self.mainVBoxLayout = QVBoxLayout()
 
         # Add our widget layouts to the mainHLayout
-        self.mainHBoxLayout.addLayout(self.imageLayout)
-        self.mainHBoxLayout.addLayout(self.buttonLayout)
+        self.mainVBoxLayout.addLayout(self.imageLayout)
+        self.mainVBoxLayout.addLayout(self.buttonLayout)
 
         # Add mainHLayout to this classes layout
-        self.setLayout(self.mainHBoxLayout)
+        self.setLayout(self.mainVBoxLayout)
 
     def createImageList(self):
         for i in range(1, len(self.dataset)):
@@ -104,32 +102,48 @@ class ViewImagesDialog(QDialog):
             makedirs(self.dirString)
 
         for i in range(0, 100):
-            npimg = torchvision.utils.make_grid(
+            npImg = torchvision.utils.make_grid(
                 self.imageList[(i * 100):(i * 100) + 100])
-            npimg = npimg.numpy()
-            npimg = np.transpose(npimg, (1, 2, 0))
+            npImg = npImg.numpy()
+            npImg = np.transpose(npImg, (1, 2, 0))
 
             plt.imsave(
-                f'{self.dirString}/{i*100 + 1},{(i*100) + 100}.png', npimg)
+                f'{self.dirString}/{i*100 + 1},{(i*100) + 100}.png', npImg)
 
-    def prevViewImage(self):
+    def prevImage(self):
         if (self.viewImageIndex > 0):
             self.viewImageIndex -= 1
         else:
             self.viewImageIndex = 99
 
-        pixmap = QPixmap(
-            f'{self.dirString}/{self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100}.png')
-        self.imageLabel.setPixmap(pixmap)
-        QApplication.processEvents()
+        self.setImage()
 
-    def nextViewImage(self):
+    def nextImage(self):
         if (self.viewImageIndex < 99):
             self.viewImageIndex += 1
         else:
             self.viewImageIndex = 0
 
+        self.setImage()
+
+    def setImage(self):
         pixmap = QPixmap(
             f'{self.dirString}/{self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100}.png')
         self.imageLabel.setPixmap(pixmap)
         QApplication.processEvents()
+
+    def openImageFileDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(
+            self, "Select the image to be viewed", self.dirString, "PNG Files (*.png)", options=options)
+        print(f'{fileName} selected')
+
+        parsedFileName = fileName.split('/')
+        parsedFileName = parsedFileName[-1].split(',')
+        parsedFileName = parsedFileName[0]
+        # print(parsedFileName)
+
+        self.viewImageIndex = int((int(parsedFileName) - 1) / 100)
+        # print(f'{self.viewImageIndex}')
+        self.setImage()

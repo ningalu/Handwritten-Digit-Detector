@@ -74,20 +74,71 @@
 # w.show()
 # sys.exit(app.exec_())
 
-from PyQt5 import QtWidgets, QtGui, QtCore
+# from PyQt5 import QtWidgets, QtGui, QtCore
 
-from matplotlib.pyplot import imread
+# from matplotlib.pyplot import imread
+# import sys
+
+# app = QtWidgets.QApplication(sys.argv)
+
+# #input_image = imread('./images/train/1,100.png')
+# #pixmap01 = QtGui.QPixmap.fromImage('./images/train/1,100.png')
+# pixmap_image = QtGui.QPixmap('./images/train/1,100.png')
+# label_imageDisplay = QtWidgets.QLabel()
+# label_imageDisplay.setPixmap(pixmap_image)
+# # label_imageDisplay.setAlignment(QtCore.Qt.AlignCenter)
+# # label_imageDisplay.setScaledContents(True)
+# # label_imageDisplay.setMinimumSize(1,1)
+# label_imageDisplay.show()
+# sys.exit(app.exec_())
+
 import sys
+from PyQt5.QtWidgets import QApplication, QWidget, QInputDialog, QLineEdit, QFileDialog
+from PyQt5.QtGui import QIcon
 
-app = QtWidgets.QApplication(sys.argv)
+class App(QWidget):
 
-#input_image = imread('./images/train/1,100.png')
-#pixmap01 = QtGui.QPixmap.fromImage('./images/train/1,100.png')
-pixmap_image = QtGui.QPixmap('./images/train/1,100.png')
-label_imageDisplay = QtWidgets.QLabel()
-label_imageDisplay.setPixmap(pixmap_image)
-# label_imageDisplay.setAlignment(QtCore.Qt.AlignCenter)
-# label_imageDisplay.setScaledContents(True)
-# label_imageDisplay.setMinimumSize(1,1)
-label_imageDisplay.show()
-sys.exit(app.exec_())
+    def __init__(self):
+        super().__init__()
+        self.title = 'PyQt5 file dialogs - pythonspot.com'
+        self.left = 10
+        self.top = 10
+        self.width = 640
+        self.height = 480
+        self.initUI()
+    
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+        
+        self.openFileNameDialog()
+        self.openFileNamesDialog()
+        self.saveFileDialog()
+        
+        self.show()
+    
+    def openFileNameDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self,"QFileDialog.getOpenFileName()", "","PNG Files (*.png);;All Files (*)", options=options)
+        if fileName:
+            print(fileName)
+    
+    def openFileNamesDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        files, _ = QFileDialog.getOpenFileNames(self,"QFileDialog.getOpenFileNames()", "","All Files (*);;Python Files (*.py)", options=options)
+        if files:
+            print(files)
+    
+    def saveFileDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getSaveFileName(self,"QFileDialog.getSaveFileName()","","All Files (*);;Text Files (*.txt)", options=options)
+        if fileName:
+            print(fileName)
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    ex = App()
+    sys.exit(app.exec_())
