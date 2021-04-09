@@ -21,15 +21,11 @@ class ViewImagesDialog(QDialog):
         self.title = title
         self.dataset = dataset
 
-        self.imageList = []  # An array of image.numpy()[0]
+        self.imageList = []
         self.createImageList()
-        # self.classes = ['0','1','2','3','4','5','6','7','8','9']
+        self.saveImages()
 
         self.initUI()
-
-        self.saveImage(torchvision.utils.make_grid(self.imageList[0:100]))
-        # print labels
-        # print(' '.join('%5s' % self.classes[labels[j]] for j in range(64)))
 
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -66,11 +62,20 @@ class ViewImagesDialog(QDialog):
         # plt.imshow(self.imageList[1], cmap='gray')
         # plt.show()
 
-    def saveImage(self, img):
-        npimg = img.numpy()
-        npimg = np.transpose(npimg, (1, 2, 0))
-        # plt.imshow(np.transpose(npimg, (1, 2, 0)))
+    def saveImages(self):
+        if ('train' in self.title.lower()):
+            dirString = './images/train'
+        else:
+            dirString = './images/test'
 
-        if not path.exists('./images'):
-            makedirs('./images')
-        plt.imsave('./images/test_image.png', npimg)
+        if not path.exists(dirString):
+            makedirs(dirString)
+
+        for i in range(0, 100):
+            npimg = torchvision.utils.make_grid(
+                self.imageList[(i * 100):(i * 100) + 100])
+            npimg = npimg.numpy()
+            npimg = np.transpose(npimg, (1, 2, 0))
+
+            plt.imsave(f'{dirString}/{i*100},{(i*100) + 100}.png', npimg)
+            # plt.imshow(np.transpose(npimg, (1, 2, 0)))

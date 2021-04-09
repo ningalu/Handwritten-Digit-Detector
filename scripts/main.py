@@ -147,7 +147,6 @@ class App(QMainWindow):
 
             dataMissingDialog.exec_()
         else:  # Otherwise create and execute the trainImagesDialog
-            print(self.test_dataset)
             self.viewTrainImagesDialog = ViewImagesDialog(
                 'View Test Images', self.test_dataset)
             self.viewTrainImagesDialog.exec_()
