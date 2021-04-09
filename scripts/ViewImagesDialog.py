@@ -2,7 +2,7 @@ from __future__ import print_function
 from math import ceil
 
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QDesktopWidget, QWidget, qApp, QHBoxLayout, QVBoxLayout
 from PyQt5.QtWidgets import QDialog, QFileDialog
 from PyQt5.QtWidgets import QPushButton, QTextEdit, QProgressBar, QLabel
 from PyQt5.QtGui import QIcon, QPixmap
@@ -20,6 +20,11 @@ class ViewImagesDialog(QDialog):
 
     def __init__(self, title, dataset):
         super().__init__()
+        # -- Creating a field for our layout for easy changes, and initialising the loading (progress) bar UI
+        self.mainVBoxLayout = QVBoxLayout()
+        self.initLoadingUI()
+
+        # -- Logic for creating the images needed
         self.title = title
         self.dataset = dataset
 
@@ -35,23 +40,36 @@ class ViewImagesDialog(QDialog):
         self.imageLabel = 0
         self.viewImageIndex = 0
 
+        # -- Deletion of the layout for the progress bar, addition of the actual layout
+        self.deleteOldLayout()
         self.initUI()
+
+    def initLoadingUI(self):
+        self.setWindowTitle('Loading Images')
+        self.resize(320, 90)
+
+        self.progressBar = QProgressBar()
+        self.progressBar.setValue(0)
+
+        self.progressBarLayout = QHBoxLayout()
+        self.progressBarLayout.addWidget(self.progressBar)
+
+        self.mainVBoxLayout.addLayout(self.progressBarLayout)
+        self.setLayout(self.mainVBoxLayout)
+
+        self.show()
+        QApplication.processEvents()
 
     def initUI(self):
         self.setWindowTitle(self.title)
         self.createWidgetLayouts()
         self.createDialogLayout()
-
+        
         self.centreWindow()
         self.show()
 
     def centreWindow(self):
-        # qr = self.frameGeometry()
-        # cp = QDesktopWidget().availableGeometry().center()
-        # qr.moveCenter(cp)
-        # self.move(qr.topLeft())
-        # self.resize(320, 180)
-        pass
+        self.move(810, 245)
 
     def createWidgetLayouts(self):
         # Create imageName and imageLabel (and set the default image to 1, 100)
@@ -89,15 +107,10 @@ class ViewImagesDialog(QDialog):
         self.buttonLayout.addWidget(self.selectButton)
 
     def createDialogLayout(self):
-        # Create a main HBoxLayout
-        self.mainVBoxLayout = QVBoxLayout()
-
-        # Add our widget layouts to the mainHLayout
+        # Add our widget layouts to the mainVLayout
         self.mainVBoxLayout.addLayout(self.imageLayout)
         self.mainVBoxLayout.addLayout(self.buttonLayout)
-
-        # Add mainHLayout to this classes layout
-        self.setLayout(self.mainVBoxLayout)
+        # QApplication.processEvents()
 
     def createImageList(self):
         for i in range(1, len(self.dataset)):
@@ -117,6 +130,9 @@ class ViewImagesDialog(QDialog):
 
             plt.imsave(
                 f'{self.dirString}/{i*100 + 1},{(i*100) + 100}.png', npImg)
+            
+            self.progressBar.setValue(i + 1)
+            QApplication.processEvents()
 
     def prevImage(self):
         if (self.viewImageIndex > 0):
@@ -157,3 +173,7 @@ class ViewImagesDialog(QDialog):
         self.viewImageIndex = int((int(parsedFileName) - 1) / 100)
         # print(f'{self.viewImageIndex}')
         self.setImage()
+
+    def deleteOldLayout(self):        
+        self.mainVBoxLayout.takeAt(0)
+        self.progressBar.setParent(None)
