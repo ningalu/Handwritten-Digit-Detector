@@ -64,7 +64,7 @@ class ViewImagesDialog(QDialog):
         self.setWindowTitle(self.title)
         self.createWidgetLayouts()
         self.createDialogLayout()
-        
+
         self.centreWindow()
         self.show()
 
@@ -130,7 +130,7 @@ class ViewImagesDialog(QDialog):
 
             plt.imsave(
                 f'{self.dirString}/{i*100 + 1},{(i*100) + 100}.png', npImg)
-            
+
             self.progressBar.setValue(i + 1)
             QApplication.processEvents()
 
@@ -155,7 +155,8 @@ class ViewImagesDialog(QDialog):
             f'{self.dirString}/{self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100}.png')
         self.imageLabel.setPixmap(pixmap)
 
-        self.imageName.setText(f'Data {self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100} (from left to right)')
+        self.imageName.setText(
+            f'Data {self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100} (from left to right)')
         QApplication.processEvents()
 
     def openImageFileDialog(self):
@@ -174,6 +175,6 @@ class ViewImagesDialog(QDialog):
         # print(f'{self.viewImageIndex}')
         self.setImage()
 
-    def deleteOldLayout(self):        
+    def deleteOldLayout(self):
         self.mainVBoxLayout.takeAt(0)
         self.progressBar.setParent(None)

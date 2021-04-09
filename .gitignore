@@ -145,3 +145,6 @@ mnist_data/
 
 # images
 images/
+
+# test
+scripts/test.py
