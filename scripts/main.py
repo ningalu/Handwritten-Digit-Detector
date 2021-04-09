@@ -29,7 +29,7 @@ class App(QMainWindow):
         # cp = QDesktopWidget().availableGeometry().center()
         # qr.moveCenter(cp)
         # self.move(qr.topLeft())
-        self.resize(480, 360)
+        self.resize(720, 540)
 
     def createMenuBar(self):
         # Create Actions

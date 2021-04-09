@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayou
 from PyQt5.QtWidgets import QDialog, QFileDialog
 from PyQt5.QtWidgets import QPushButton, QTextEdit, QProgressBar, QLabel
 from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5 import QtCore
 
 import time
 import matplotlib.pyplot as plt
@@ -53,16 +54,22 @@ class ViewImagesDialog(QDialog):
         pass
 
     def createWidgetLayouts(self):
-        # Create imageLabel and set the default image to 1, 100
+        # Create imageName and imageLabel (and set the default image to 1, 100)
+        self.imageName = QLabel()
+        self.imageName.setText('Data 1,100 (from left to right)')
+        self.imageName.setAlignment(QtCore.Qt.AlignCenter)
+
         self.imageLabel = QLabel()
         pixmap = QPixmap(f'{self.dirString}/1,100.png')
         self.imageLabel.setPixmap(pixmap)
+        self.imageLabel.setAlignment(QtCore.Qt.AlignCenter)
 
-        # Create imageLayout and add the imageLabel to it
+        # Create imageLayout and add the imageLabel and name to it
         self.imageLayout = QVBoxLayout()
         self.imageLayout.addWidget(self.imageLabel)
+        self.imageLayout.addWidget(self.imageName)
 
-        # Create the buttons needed and put them in their own HBox
+        # Create the navigation buttons needed and put them in their own HBox
         self.previousButton = QPushButton('Previous')
         self.previousButton.clicked.connect(self.prevImage)
         self.nextButton = QPushButton('Next')
@@ -72,6 +79,7 @@ class ViewImagesDialog(QDialog):
         self.navLayout.addWidget(self.previousButton)
         self.navLayout.addWidget(self.nextButton)
 
+        # Create the select image button
         self.selectButton = QPushButton('Select image')
         self.selectButton.clicked.connect(self.openImageFileDialog)
 
@@ -130,6 +138,8 @@ class ViewImagesDialog(QDialog):
         pixmap = QPixmap(
             f'{self.dirString}/{self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100}.png')
         self.imageLabel.setPixmap(pixmap)
+
+        self.imageName.setText(f'Data {self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100} (from left to right)')
         QApplication.processEvents()
 
     def openImageFileDialog(self):
