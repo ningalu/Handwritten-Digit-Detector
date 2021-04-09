@@ -120,6 +120,9 @@ class App(QMainWindow):
     def showTrainImagesDialog(self):
         try:  # Check if the dataset has been acquired by the trainingDialog yet
             self.train_dataset = self.trainingDialog.getTrainSet()
+
+            if len(self.train_dataset) == 0:
+                raise AttributeError
         except AttributeError:  # If not let the user know they have to get the dataset before viewing images
             dataMissingDialog = QMessageBox()
             dataMissingDialog.setWindowTitle('Data Missing')
@@ -137,6 +140,9 @@ class App(QMainWindow):
     def showTestImagesDialog(self):
         try:  # Check if the dataset has been acquired by the trainingDialog yet
             self.test_dataset = self.trainingDialog.getTestSet()
+
+            if len(self.test_dataset) == 0:
+                raise AttributeError
         except AttributeError:  # If not let the user know they have to get the dataset before viewing images
             dataMissingDialog = QMessageBox()
             dataMissingDialog.setWindowTitle('Data Missing')
