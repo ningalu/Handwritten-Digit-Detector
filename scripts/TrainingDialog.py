@@ -94,6 +94,9 @@ class TrainingDialog(QDialog):
         self.progressBar.setValue(99)
         self.progressTextBox.append("Downloading test dataset...")
         QApplication.processEvents()
+        self.test_dataset = datasets.MNIST(root='./mnist_data/',
+                                           train=False,
+                                           transform=transforms.ToTensor())
         self.progressBar.setValue(100)
         QApplication.processEvents()
         self.progressTextBox.append("MNIST Dataset successfully downloaded.")
@@ -110,10 +113,6 @@ class TrainingDialog(QDialog):
         # MNIST Dataset
         #self.train_dataset = self.downloadMNIST()
         self.downloadMNIST()
-
-        self.test_dataset = datasets.MNIST(root='./mnist_data/',
-                                           train=False,
-                                           transform=transforms.ToTensor())
 
         self.progressTextBox.setText('')
         self.progressTextBox.append("Training...")
