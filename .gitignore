@@ -142,9 +142,3 @@ cython_debug/
 
 # MNIST
 mnist_data/
-
-# images
-images/
-
-# test
-test.py
