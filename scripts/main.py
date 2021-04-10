@@ -2,6 +2,8 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QWidget, QDesktopWidget, qApp, QHBoxLayout, QVBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QMenuBar, QPushButton, QLabel, QLineEdit, QFrame
 from PyQt5.QtWidgets import QMessageBox
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
+from PyQt5.QtCore import Qt
 
 from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
@@ -83,15 +85,31 @@ class App(QMainWindow):
         #Set central widget's layout to our grid
         self.centralWidget.setLayout(grid)
 
+    def mouseMoveEvent(self, e):
+        painter = QtGui.QPainter(self.canvas.pixmap())
+        p = painter.pen()
+        p.setWidth(4)
+        painter.setPen(p)
+        painter.drawPoint(e.x()-self.canvas.pos().x(), e.y()-self.canvas.pos().y()*3)
+        print(self.canvas.pos().x(), self.canvas.pos().y())
+        print(e.x(), e.y())
+        painter.end()
+        self.update()
+
     def createWidgetLayouts(self):
         # -- Creating Left Side of Layout
         # Create a box layout for the canvas
         self.canvasLayout = QVBoxLayout()
         # Create canvas widget
         self.canvas = QFrame(self)
-        self.canvas.setStyleSheet(
-            "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
-        # Add canvas widget to canvas layout
+        self.canvas = QtWidgets.QLabel()
+        canvas_content = QtGui.QPixmap(self.canvas.height(), self.canvas.width())
+        
+        canvas_content.fill(QtGui.QColor("white"))
+        self.canvas.setPixmap(canvas_content)
+        #self.canvas.setStyleSheet(
+        #    "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
+        #Add canvas widget to canvas layout
         self.canvasLayout.addWidget(self.canvas)
 
         # -- Creating Right Side of Layout
