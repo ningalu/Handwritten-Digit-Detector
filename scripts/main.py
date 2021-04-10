@@ -19,10 +19,10 @@ class App(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle('Handwritten Digit Recognizer')
-        self.createMenuBar()
+        
         self.createWidgetLayouts()
         self.createCentralLayout()
-
+        self.createMenuBar()
         self.centreWindow()
         self.show()
 
@@ -90,7 +90,7 @@ class App(QMainWindow):
         p = painter.pen()
         p.setWidth(4)
         painter.setPen(p)
-        painter.drawPoint(e.x()-self.canvas.pos().x(), e.y()-self.canvas.pos().y()*3)
+        painter.drawPoint(e.x()-self.canvas.pos().x(), e.y()-self.canvas.pos().y())
         print(self.canvas.pos().x(), self.canvas.pos().y())
         print(e.x(), e.y())
         painter.end()
