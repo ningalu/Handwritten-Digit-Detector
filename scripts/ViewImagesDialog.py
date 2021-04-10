@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QApplication, QDesktopWidget, QWidget, qApp, QHBoxLa
 from PyQt5.QtWidgets import QDialog, QFileDialog
 from PyQt5.QtWidgets import QPushButton, QTextEdit, QProgressBar, QLabel
 from PyQt5.QtGui import QIcon, QPixmap
-from PyQt5 import QtCore
+from PyQt5.QtCore import Qt
 
 import time
 import matplotlib.pyplot as plt
@@ -75,12 +75,12 @@ class ViewImagesDialog(QDialog):
         # Create imageName and imageLabel (and set the default image to 1, 100)
         self.imageName = QLabel()
         self.imageName.setText('Data 1,100 (from left to right)')
-        self.imageName.setAlignment(QtCore.Qt.AlignCenter)
+        self.imageName.setAlignment(Qt.AlignCenter)
 
         self.imageLabel = QLabel()
         pixmap = QPixmap(f'{self.dirString}/1,100.png')
         self.imageLabel.setPixmap(pixmap)
-        self.imageLabel.setAlignment(QtCore.Qt.AlignCenter)
+        self.imageLabel.setAlignment(Qt.AlignCenter)
 
         # Create imageLayout and add the imageLabel and name to it
         self.imageLayout = QVBoxLayout()

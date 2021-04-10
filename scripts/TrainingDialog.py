@@ -5,12 +5,13 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QPushButton, QTextEdit, QProgressBar
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from torch import nn, optim, cuda
-from torch.utils import data
 from torchvision import datasets, transforms
-import torch.nn.functional as F
 import time
+
+from TrainingWorker import TrainingWorker
 
 
 class TrainingDialog(QDialog):
@@ -19,6 +20,9 @@ class TrainingDialog(QDialog):
         super().__init__()
         self.train_dataset = []
         self.test_dataset = []
+
+        # trainingWorker created here to allow cancelButton to know what trainingWorker.stop refers to initially
+        self.trainingWorker = TrainingWorker()
         self.initUI()
 
     def initUI(self):
@@ -57,8 +61,12 @@ class TrainingDialog(QDialog):
         self.downloadButton.clicked.connect(self.downloadMNIST)
         self.trainButton = QPushButton("Train")
         self.trainButton.clicked.connect(self.trainModel)
+        # We should not be able to use the Train button until we have used Download at least once
+        self.trainButton.setDisabled(True)
         self.cancelButton = QPushButton("Cancel")
-        self.cancelButton.clicked.connect(self.close)
+        self.cancelButton.clicked.connect(self.cancelButtonAction)
+        # We should not be able to use the Cancel button until we have used Download at least once
+        self.cancelButton.setDisabled(True)
 
         # Create button layout and add widgets
         self.buttonLayout = QHBoxLayout()
@@ -78,7 +86,7 @@ class TrainingDialog(QDialog):
         # Add mainVLayout to this classes layout
         self.setLayout(self.mainVBoxLayout)
 
-    # Downloads both the train and test sets, but only one download=True needed so test omitted
+# Downloads both the train and test sets, but only one download=True needed so test omitted
     def downloadMNIST(self):
         self.progressTextBox.setText('')
         self.progressTextBox.append("Downloading train dataset...")
@@ -102,122 +110,53 @@ class TrainingDialog(QDialog):
         self.progressTextBox.append("MNIST Dataset successfully downloaded.")
         self.progressBar.setValue(0)
 
-        # return train_dataset
+        # Once we click Download we should now be able to click Train
+        self.trainButton.setDisabled(False)
 
     def trainModel(self):
-        # Training settings
-        batch_size = 64
-        device = 'cuda' if cuda.is_available() else 'cpu'
-        print(f'Training MNIST Model on {device}\n{"=" * 44}')
+        # Threading
+        self.thread = QThread()
 
-        # MNIST Dataset
-        #self.train_dataset = self.downloadMNIST()
-        self.downloadMNIST()
+        # If we click Train we need to create a new worker, to begin the process again
+        self.trainingWorker = TrainingWorker()
+
+        self.trainingWorker.moveToThread(self.thread)
+
+        # Starting and deletion logic
+        self.thread.started.connect(self.trainingWorker.run)
+        self.trainingWorker.finished.connect(self.thread.quit)
+        self.trainingWorker.finished.connect(self.trainingWorker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        # Signal logic
+        self.trainingWorker.progressText.connect(self.setProgressText)
+        self.trainingWorker.progressBar.connect(self.setProgressBar)
+
+        self.thread.start()
+
+        # Once the thread starts training we should no longer be able to Download or click Train
+        self.trainButton.setDisabled(True)
+        self.downloadButton.setDisabled(True)
+        self.cancelButton.setDisabled(False)
+
+    def cancelButtonAction(self):
+        # If the cancel button is clicked, exit the thread and allow Train and Download to be clicked again
+        self.trainingWorker.stop()
+        self.trainButton.setDisabled(False)
+        self.downloadButton.setDisabled(False)
 
         self.progressTextBox.setText('')
-        self.progressTextBox.append("Training...")
+        self.progressTextBox.append('Operation cancelled.')
 
-        # Data Loader (Input Pipeline)
-        train_loader = data.DataLoader(dataset=self.train_dataset,
-                                       batch_size=batch_size,
-                                       shuffle=True)
+    def setProgressText(self, text: str, clear: bool):
+        if clear:
+            self.progressTextBox.setText('')
 
-        test_loader = data.DataLoader(dataset=self.test_dataset,
-                                      batch_size=batch_size,
-                                      shuffle=False)
+        self.progressTextBox.append(text)
 
-        class Net(nn.Module):
+    def setProgressBar(self, value: int):
 
-            def __init__(self):
-                super(Net, self).__init__()
-                self.l1 = nn.Linear(784, 520)
-                self.l2 = nn.Linear(520, 320)
-                self.l3 = nn.Linear(320, 240)
-                self.l4 = nn.Linear(240, 120)
-                self.l5 = nn.Linear(120, 10)
-
-            def forward(self, x):
-                # Flatten the data (n, 1, 28, 28)-> (n, 784)
-                x = x.view(-1, 784)
-                x = F.relu(self.l1(x))
-                x = F.relu(self.l2(x))
-                x = F.relu(self.l3(x))
-                x = F.relu(self.l4(x))
-                return self.l5(x)
-
-        model = Net()
-        model.to(device)
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
-
-        def train(epoch):
-            model.train()
-            for batch_idx, (data, target) in enumerate(train_loader):
-                data, target = data.to(device), target.to(device)
-                optimizer.zero_grad()
-                output = model(data)
-                loss = criterion(output, target)
-                loss.backward()
-                optimizer.step()
-                if batch_idx % 10 == 0:
-                    print('Train Epoch: {} | Batch Status: {}/{} ({:.0f}%) | Loss: {:.6f}'.format(
-                        epoch, batch_idx *
-                        len(data), len(train_loader.dataset),
-                        100. * batch_idx / len(train_loader), loss.item()))
-
-        def test():
-            model.eval()
-            test_loss = 0
-            correct = 0
-
-            accuracy = 0.0
-
-            for data, target in test_loader:
-                data, target = data.to(device), target.to(device)
-                output = model(data)
-                # sum up batch loss
-                test_loss += criterion(output, target).item()
-                # get the index of the max
-                pred = output.data.max(1, keepdim=True)[1]
-                correct += pred.eq(target.data.view_as(pred)).cpu().sum()
-
-            test_loss /= len(test_loader.dataset)
-            print(f'===========================\nTest set: Average loss: {test_loss:.4f}, Accuracy: {correct}/{len(test_loader.dataset)} '
-                  f'({100. * correct / len(test_loader.dataset):.0f}%)')
-
-            accuracy = 100 * correct/len(test_loader.dataset)
-            return accuracy
-
-        if __name__ == 'TrainingDialog':
-            overallAccuracy = 0.0
-
-            since = time.time()
-            for epoch in range(1, 10):
-                self.progressTextBox.append(f"Training Epoch: {epoch}")
-                self.progressBar.setValue(ceil((epoch - 1) * (100/9)))
-                # Needed for the GUI to update when the app stops responding
-                QApplication.processEvents()
-
-                epoch_start = time.time()
-                train(epoch)
-                m, s = divmod(time.time() - epoch_start, 60)
-                print(f'Training time: {m:.0f}m {s:.0f}s')
-
-                if (epoch == 9):
-                    overallAccuracy = test()
-                else:
-                    test()
-
-                m, s = divmod(time.time() - epoch_start, 60)
-                print(f'Testing time: {m:.0f}m {s:.0f}s')
-
-            m, s = divmod(time.time() - since, 60)
-
-            print(
-                f'Total Time: {m:.0f}m {s:.0f}s\nModel was trained on {device}!')
-            self.progressTextBox.append(
-                f"Overall accuracy: {overallAccuracy:.0f}%")
-            self.progressBar.setValue(0)
+        self.progressBar.setValue(value)
 
     def getTrainSet(self):
 

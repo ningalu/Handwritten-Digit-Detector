@@ -150,7 +150,7 @@ class App(QMainWindow):
                 "Make sure you go to File > Train Model and click 'Download MNIST' first.")
 
             dataMissingDialog.exec_()
-        else:  # Otherwise create and execute the trainImagesDialog
+        else:  # Otherwise create and execute the ViewImagesDialog
             self.viewTrainImagesDialog = ViewImagesDialog(
                 'View Training Images', self.train_dataset)
             self.viewTrainImagesDialog.exec_()
@@ -170,7 +170,7 @@ class App(QMainWindow):
                 "Make sure you go to File > Train Model and click 'Download MNIST' first.")
 
             dataMissingDialog.exec_()
-        else:  # Otherwise create and execute the trainImagesDialog
+        else:  # Otherwise create and execute the ViewImagesDialog
             self.viewTrainImagesDialog = ViewImagesDialog(
                 'View Test Images', self.test_dataset)
             self.viewTrainImagesDialog.exec_()
