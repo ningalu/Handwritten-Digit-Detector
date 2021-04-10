@@ -65,6 +65,8 @@ class TrainingDialog(QDialog):
         self.trainButton.setDisabled(True)
         self.cancelButton = QPushButton("Cancel")
         self.cancelButton.clicked.connect(self.cancelButtonAction)
+        # We should not be able to use the Cancel button until we have used Download at least once
+        self.cancelButton.setDisabled(True)
 
         # Create button layout and add widgets
         self.buttonLayout = QHBoxLayout()
@@ -108,7 +110,7 @@ class TrainingDialog(QDialog):
         self.progressTextBox.append("MNIST Dataset successfully downloaded.")
         self.progressBar.setValue(0)
 
-        # Once we click Download we should no longer be able to click Train
+        # Once we click Download we should now be able to click Train
         self.trainButton.setDisabled(False)
 
     def trainModel(self):
@@ -120,22 +122,41 @@ class TrainingDialog(QDialog):
 
         self.trainingWorker.moveToThread(self.thread)
 
+        # Starting and deletion logic
         self.thread.started.connect(self.trainingWorker.run)
         self.trainingWorker.finished.connect(self.thread.quit)
         self.trainingWorker.finished.connect(self.trainingWorker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+
+        # Signal logic
+        self.trainingWorker.progressText.connect(self.setProgressText)
+        self.trainingWorker.progressBar.connect(self.setProgressBar)
 
         self.thread.start()
 
         # Once the thread starts training we should no longer be able to Download or click Train
         self.trainButton.setDisabled(True)
         self.downloadButton.setDisabled(True)
+        self.cancelButton.setDisabled(False)
 
     def cancelButtonAction(self):
         # If the cancel button is clicked, exit the thread and allow Train and Download to be clicked again
         self.trainingWorker.stop()
         self.trainButton.setDisabled(False)
         self.downloadButton.setDisabled(False)
+
+        self.progressTextBox.setText('')
+        self.progressTextBox.append('Operation cancelled.')
+
+    def setProgressText(self, text: str, clear: bool):
+        if clear:
+            self.progressTextBox.setText('')
+
+        self.progressTextBox.append(text)
+
+    def setProgressBar(self, value: int):
+
+        self.progressBar.setValue(value)
 
     def getTrainSet(self):
 

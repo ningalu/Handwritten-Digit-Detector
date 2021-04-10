@@ -1,22 +1,19 @@
 from __future__ import print_function
 
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
-from math import ceil
-
-import sys
 from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
-from PyQt5.QtWidgets import QDialog
-from PyQt5.QtWidgets import QPushButton, QTextEdit, QProgressBar
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from torch import nn, optim, cuda
 from torch.utils import data
 from torchvision import datasets, transforms
 import torch.nn.functional as F
+from math import ceil
 import time
 
 
 class TrainingWorker(QObject):
+    progressText = pyqtSignal(str, bool)
+    progressBar = pyqtSignal(int)
     finished = pyqtSignal()
 
     def run(self):
@@ -26,30 +23,26 @@ class TrainingWorker(QObject):
         self.finished.emit()
 
     # Downloads both the train and test sets, but only one download=True needed so test omitted
-    def downloadMNIST(self):
-        # self.progressTextBox.setText('')
-        # self.progressTextBox.append("Downloading train dataset...")
-        # Needed for the GUI to update when the app stops responding
-        QApplication.processEvents()
+    def loadMNIST(self):
+        self.progressText.emit('', True)
+        self.progressText.emit("Loading train dataset...", False)
 
         # MNIST Dataset
         self.train_dataset = datasets.MNIST(root='./mnist_data/',
                                             train=True,
                                             transform=transforms.ToTensor(),
-                                            download=True)
+                                            download=False)
 
-        # self.progressBar.setValue(99)
-        # self.progressTextBox.append("Downloading test dataset...")
-        QApplication.processEvents()
+        self.progressBar.emit(99)
+
+        self.progressText.emit("Loading test dataset...", False)
         self.test_dataset = datasets.MNIST(root='./mnist_data/',
                                            train=False,
                                            transform=transforms.ToTensor())
-        # self.progressBar.setValue(100)
-        QApplication.processEvents()
-        # self.progressTextBox.append("MNIST Dataset successfully downloaded.")
-        # self.progressBar.setValue(0)
 
-        # return train_dataset
+        self.progressBar.emit(100)
+        self.progressText.emit("MNIST Dataset successfully loaded.", False)
+        self.progressBar.emit(0)
 
     def trainModel(self):
         # Training settings
@@ -58,11 +51,10 @@ class TrainingWorker(QObject):
         print(f'Training MNIST Model on {device}\n{"=" * 44}')
 
         # MNIST Dataset
-        #self.train_dataset = self.downloadMNIST()
-        self.downloadMNIST()
+        self.loadMNIST()
 
-        # self.progressTextBox.setText('')
-        # self.progressTextBox.append("Training...")
+        self.progressText.emit('', True)
+        self.progressText.emit("Training...", False)
 
         # Data Loader (Input Pipeline)
         train_loader = data.DataLoader(dataset=self.train_dataset,
@@ -149,10 +141,8 @@ class TrainingWorker(QObject):
                 if self.flag == 0:
                     break
 
-                # self.progressTextBox.append(f"Training Epoch: {epoch}")
-                # self.progressBar.setValue(ceil((epoch - 1) * (100/9)))
-                # Needed for the GUI to update when the app stops responding
-                QApplication.processEvents()
+                self.progressText.emit(f"Training Epoch: {epoch}", False)
+                self.progressBar.emit(ceil((epoch - 1) * (100/9)))
 
                 epoch_start = time.time()
                 train(epoch)
@@ -172,9 +162,9 @@ class TrainingWorker(QObject):
             if (self.flag == 1):
                 print(
                     f'Total Time: {m:.0f}m {s:.0f}s\nModel was trained on {device}!')
-            # self.progressTextBox.append(
-                # f"Overall accuracy: {overallAccuracy:.0f}%")
-            # self.progressBar.setValue(0)
+            self.progressText.emit(
+                f"Overall accuracy: {overallAccuracy:.0f}%", False)
+            self.progressBar.emit(0)
 
     def stop(self):
         self.flag = 0
