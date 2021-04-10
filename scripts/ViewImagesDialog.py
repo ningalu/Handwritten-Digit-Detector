@@ -164,16 +164,17 @@ class ViewImagesDialog(QDialog):
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(
             self, "Select the image to be viewed", self.dirString, "PNG Files (*.png)", options=options)
-        print(f'{fileName} selected')
+        if fileName:
+            print(f'{fileName} selected')
 
-        parsedFileName = fileName.split('/')
-        parsedFileName = parsedFileName[-1].split(',')
-        parsedFileName = parsedFileName[0]
-        # print(parsedFileName)
+            parsedFileName = fileName.split('/')
+            parsedFileName = parsedFileName[-1].split(',')
+            parsedFileName = parsedFileName[0]
+            # print(parsedFileName)
 
-        self.viewImageIndex = int((int(parsedFileName) - 1) / 100)
-        # print(f'{self.viewImageIndex}')
-        self.setImage()
+            self.viewImageIndex = int((int(parsedFileName) - 1) / 100)
+            # print(f'{self.viewImageIndex}')
+            self.setImage()
 
     def deleteOldLayout(self):
         self.mainVBoxLayout.takeAt(0)
