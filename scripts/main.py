@@ -91,8 +91,8 @@ class App(QMainWindow):
         p.setWidth(4)
         painter.setPen(p)
         painter.drawPoint(e.x()-self.canvas.pos().x(), e.y()-self.canvas.pos().y()-self.menuBar().frameSize().height())
-        print(self.canvas.pos().x(), self.canvas.pos().y())
-        print(e.x(), e.y())
+        #print(self.canvas.pos().x(), self.canvas.pos().y())
+        #print(e.x(), e.y())
         painter.end()
         self.update()
 
