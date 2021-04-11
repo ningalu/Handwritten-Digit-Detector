@@ -88,13 +88,20 @@ class App(QMainWindow):
     def mouseMoveEvent(self, e):
         painter = QtGui.QPainter(self.canvas.pixmap())
         p = painter.pen()
-        p.setWidth(4)
+        p.setWidth(8)
+        p.setCapStyle(0x20)
+        
         painter.setPen(p)
         painter.drawPoint(e.x()-self.canvas.pos().x(), e.y()-self.canvas.pos().y()-self.menuBar().frameSize().height())
         #print(self.canvas.pos().x(), self.canvas.pos().y())
         #print(e.x(), e.y())
         painter.end()
         self.update()
+
+    def clear(self):
+        clear_canvas = QtGui.QPixmap(self.canvas.pixmap().size())
+        clear_canvas.fill(QtGui.QColor("white"))
+        self.canvas.setPixmap(clear_canvas)
 
     def createWidgetLayouts(self):
         # -- Creating Left Side of Layout
@@ -103,7 +110,9 @@ class App(QMainWindow):
         # Create canvas widget
         self.canvas = QFrame(self)
         self.canvas = QtWidgets.QLabel()
-        canvas_content = QtGui.QPixmap(self.canvas.height(), self.canvas.width())
+        self.canvas_size = QtCore.QSize(480, 640)
+        canvas_content = QtGui.QPixmap(self.canvas_size)
+        
         
         canvas_content.fill(QtGui.QColor("white"))
         self.canvas.setPixmap(canvas_content)
@@ -111,7 +120,8 @@ class App(QMainWindow):
         #    "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
         #Add canvas widget to canvas layout
         self.canvasLayout.addWidget(self.canvas)
-
+        print("self.canvas size: ", self.canvas.size())
+        print("self.canvas.pixmap size: ", self.canvas.pixmap().size())
         # -- Creating Right Side of Layout
         # Create a buttonLayout (a vbox)
         self.buttonLayout = QVBoxLayout()
@@ -119,7 +129,10 @@ class App(QMainWindow):
         self.buttonLayout.setSpacing(0)
         self.buttonLayout.setContentsMargins(0, 0, 0, 0)
         # Add buttons to the box
-        self.buttonLayout.addWidget(QPushButton('Clear'))
+        self.clear_button = QPushButton('Clear')
+        self.clear_button.clicked.connect(self.clear)
+        #self.buttonLayout.addWidget(self.clear_button)
+        self.buttonLayout.addWidget(self.clear_button)
         self.buttonLayout.addWidget(QPushButton('Random'))
         self.buttonLayout.addWidget(QPushButton('Model'))
         self.buttonLayout.addWidget(QPushButton('Recognize'))
