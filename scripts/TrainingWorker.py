@@ -3,29 +3,23 @@ from __future__ import print_function
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
 
-from torch import nn, optim, cuda, save
+from torch import nn, optim, cuda
 from torch.utils import data
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 from math import ceil
 import time
 
-from os import makedirs, path
-
-from Net import Net
-
 
 class TrainingWorker(QObject):
     progressText = pyqtSignal(str, bool)
     progressBar = pyqtSignal(int)
-    getModel = pyqtSignal(Net)
     finished = pyqtSignal()
 
     def run(self):
         self.flag = 1
-        model = self.trainModel()
+        self.trainModel()
 
-        self.getModel.emit(model)
         self.finished.emit()
 
     # Downloads both the train and test sets, but only one download=True needed so test omitted
@@ -70,6 +64,25 @@ class TrainingWorker(QObject):
         test_loader = data.DataLoader(dataset=self.test_dataset,
                                       batch_size=batch_size,
                                       shuffle=False)
+
+        class Net(nn.Module):
+
+            def __init__(self):
+                super(Net, self).__init__()
+                self.l1 = nn.Linear(784, 520)
+                self.l2 = nn.Linear(520, 320)
+                self.l3 = nn.Linear(320, 240)
+                self.l4 = nn.Linear(240, 120)
+                self.l5 = nn.Linear(120, 10)
+
+            def forward(self, x):
+                # Flatten the data (n, 1, 28, 28)-> (n, 784)
+                x = x.view(-1, 784)
+                x = F.relu(self.l1(x))
+                x = F.relu(self.l2(x))
+                x = F.relu(self.l3(x))
+                x = F.relu(self.l4(x))
+                return self.l5(x)
 
         model = Net()
         model.to(device)
@@ -152,9 +165,6 @@ class TrainingWorker(QObject):
             self.progressText.emit(
                 f"Overall accuracy: {overallAccuracy:.0f}%", False)
             self.progressBar.emit(0)
-
-            save(model.state_dict(), './mnist_model.zip')
-            return model;
 
     def stop(self):
         self.flag = 0

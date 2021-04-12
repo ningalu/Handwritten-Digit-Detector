@@ -5,16 +5,15 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
 
+
 import cv2
 import torch
 import numpy as np
 from PIL import Image
 
 from os import makedirs, path
-
 from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
-from Net import Net
 
 
 class App(QMainWindow):
@@ -27,7 +26,7 @@ class App(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle('Handwritten Digit Recognizer')
-
+        
         self.createWidgetLayouts()
         self.createCentralLayout()
         self.createMenuBar()
@@ -98,14 +97,18 @@ class App(QMainWindow):
         p = painter.pen()
         p.setWidth(40)
         p.setCapStyle(0x20)
-
+        
         painter.setPen(p)
-        painter.drawPoint(e.x()-self.canvas.pos().x(), e.y() -
-                          self.canvas.pos().y()-self.menuBar().frameSize().height())
+        painter.drawPoint(e.x()-self.canvas.pos().x(), e.y()-self.canvas.pos().y()-self.menuBar().frameSize().height())
         #print(self.canvas.pos().x(), self.canvas.pos().y())
         #print(e.x(), e.y())
         painter.end()
         self.update()
+
+    def clear(self):
+        clear_canvas = QtGui.QPixmap(self.canvas.pixmap().size())
+        clear_canvas.fill(QtGui.QColor("white"))
+        self.canvas.setPixmap(clear_canvas)
 
     def createWidgetLayouts(self):
         # -- Creating Left Side of Layout
@@ -114,17 +117,18 @@ class App(QMainWindow):
         # Create canvas widget
         self.canvas = QFrame(self).heightForWidth(self.height())
         self.canvas = QtWidgets.QLabel()
-        self.canvas_size = QtCore.QSize(self.canvas.height() + self.menuBar().frameSize().height(), 
-            self.canvas.height() + self.menuBar().frameSize().height())
+        self.canvas_size = QtCore.QSize(self.canvas.height(), self.canvas.height())
         canvas_content = QtGui.QPixmap(self.canvas_size)
-
+        
+        
         canvas_content.fill(QtGui.QColor("white"))
         self.canvas.setPixmap(canvas_content)
         #self.canvas.setStyleSheet(
         #    "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
         #Add canvas widget to canvas layout
         self.canvasLayout.addWidget(self.canvas)
-
+        # print("self.canvas size: ", self.canvas.size())
+        # print("self.canvas.pixmap size: ", self.canvas.pixmap().size())
         # -- Creating Right Side of Layout
         # Create a buttonLayout (a vbox)
         self.buttonLayout = QVBoxLayout()
@@ -148,11 +152,13 @@ class App(QMainWindow):
         self.saveButton.clicked.connect(lambda: self.save(True))
 
         # Add buttons to the box
-        self.buttonLayout.addWidget(self.clearButton)
-        self.buttonLayout.addWidget(self.randomButton)
-        self.buttonLayout.addWidget(self.modelButton)
-        self.buttonLayout.addWidget(self.recognizeButton)
-        self.buttonLayout.addWidget(self.saveButton)
+        self.clear_button = QPushButton('Clear')
+        self.clear_button.clicked.connect(self.clear)
+        #self.buttonLayout.addWidget(self.clear_button)
+        self.buttonLayout.addWidget(self.clear_button)
+        self.buttonLayout.addWidget(QPushButton('Random'))
+        self.buttonLayout.addWidget(QPushButton('Model'))
+        self.buttonLayout.addWidget(QPushButton('Recognize'))
 
         # Create a layout for the class probability display
         self.classProbLayout = QVBoxLayout()
@@ -175,7 +181,6 @@ class App(QMainWindow):
     def showTrainingDialog(self):
         self.trainingDialog = TrainingDialog()
         self.trainingDialog.exec_()
-        print(self.trainingDialog.model)
 
     def showTrainImagesDialog(self):
         try:  # Check if the dataset has been acquired by the trainingDialog yet
@@ -275,7 +280,6 @@ class App(QMainWindow):
             imageSavedDialog.setText(f'Your drawing has been saved to "{imgPath}/user_drawing.png"')
 
             imageSavedDialog.exec_()
-
 
 if __name__ == '__main__':
    app = QApplication(sys.argv)
