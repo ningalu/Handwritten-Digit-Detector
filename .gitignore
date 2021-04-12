@@ -142,6 +142,7 @@ cython_debug/
 
 # MNIST
 mnist_data/
+mnist_model.zip
 
 # images
 images/
