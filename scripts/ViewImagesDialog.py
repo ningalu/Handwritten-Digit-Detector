@@ -164,7 +164,6 @@ class ViewImagesDialog(QDialog):
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(
             self, "Select the image to be viewed", self.dirString, "PNG Files (*.png)", options=options)
-        
         if fileName:
             print(f'{fileName} selected')
 

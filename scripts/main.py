@@ -5,12 +5,8 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
 
-import cv2
-import torch
-
 from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
-from Net import Net
 
 
 class App(QMainWindow):
@@ -23,7 +19,7 @@ class App(QMainWindow):
 
     def initUI(self):
         self.setWindowTitle('Handwritten Digit Recognizer')
-
+        
         self.createWidgetLayouts()
         self.createCentralLayout()
         self.createMenuBar()
@@ -94,14 +90,18 @@ class App(QMainWindow):
         p = painter.pen()
         p.setWidth(8)
         p.setCapStyle(0x20)
-
+        
         painter.setPen(p)
-        painter.drawPoint(e.x()-self.canvas.pos().x(), e.y() -
-                          self.canvas.pos().y()-self.menuBar().frameSize().height())
+        painter.drawPoint(e.x()-self.canvas.pos().x(), e.y()-self.canvas.pos().y()-self.menuBar().frameSize().height())
         #print(self.canvas.pos().x(), self.canvas.pos().y())
         #print(e.x(), e.y())
         painter.end()
         self.update()
+
+    def clear(self):
+        clear_canvas = QtGui.QPixmap(self.canvas.pixmap().size())
+        clear_canvas.fill(QtGui.QColor("white"))
+        self.canvas.setPixmap(clear_canvas)
 
     def createWidgetLayouts(self):
         # -- Creating Left Side of Layout
@@ -110,45 +110,32 @@ class App(QMainWindow):
         # Create canvas widget
         self.canvas = QFrame(self).heightForWidth(self.height())
         self.canvas = QtWidgets.QLabel()
-        self.canvas_size = QtCore.QSize(self.canvas.height() + self.menuBar().frameSize().height(), 
-            self.canvas.height() + self.menuBar().frameSize().height())
+        self.canvas_size = QtCore.QSize(self.canvas.height(), self.canvas.height())
         canvas_content = QtGui.QPixmap(self.canvas_size)
-
+        
+        
         canvas_content.fill(QtGui.QColor("white"))
         self.canvas.setPixmap(canvas_content)
         #self.canvas.setStyleSheet(
         #    "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
         #Add canvas widget to canvas layout
         self.canvasLayout.addWidget(self.canvas)
-
+        # print("self.canvas size: ", self.canvas.size())
+        # print("self.canvas.pixmap size: ", self.canvas.pixmap().size())
         # -- Creating Right Side of Layout
         # Create a buttonLayout (a vbox)
         self.buttonLayout = QVBoxLayout()
         # Style buttons
         self.buttonLayout.setSpacing(0)
         self.buttonLayout.setContentsMargins(0, 0, 0, 0)
-
-        # Create buttons
-        self.clearButton = QPushButton('Clear')
-        self.clearButton.setShortcut('Ctrl+Z')
-        self.clearButton.clicked.connect(self.clear)
-        self.randomButton = QPushButton('Random')
-        # self.randomButton.clicked.connect()
-        self.modelButton = QPushButton('Model')
-        # self.modelButton.clicked.connect()
-        self.recognizeButton = QPushButton('Recognize')
-        self.recognizeButton.setShortcut('Ctrl+R')
-        self.recognizeButton.clicked.connect(self.recognize)
-        self.saveButton = QPushButton('Save')
-        self.saveButton.setShortcut('Ctrl+S')
-        self.saveButton.clicked.connect(self.save)
-
         # Add buttons to the box
-        self.buttonLayout.addWidget(self.clearButton)
-        self.buttonLayout.addWidget(self.randomButton)
-        self.buttonLayout.addWidget(self.modelButton)
-        self.buttonLayout.addWidget(self.recognizeButton)
-        self.buttonLayout.addWidget(self.saveButton)
+        self.clear_button = QPushButton('Clear')
+        self.clear_button.clicked.connect(self.clear)
+        #self.buttonLayout.addWidget(self.clear_button)
+        self.buttonLayout.addWidget(self.clear_button)
+        self.buttonLayout.addWidget(QPushButton('Random'))
+        self.buttonLayout.addWidget(QPushButton('Model'))
+        self.buttonLayout.addWidget(QPushButton('Recognize'))
 
         # Create a layout for the class probability display
         self.classProbLayout = QVBoxLayout()
@@ -160,7 +147,6 @@ class App(QMainWindow):
     def showTrainingDialog(self):
         self.trainingDialog = TrainingDialog()
         self.trainingDialog.exec_()
-        print(self.trainingDialog.model)
 
     def showTrainImagesDialog(self):
         try:  # Check if the dataset has been acquired by the trainingDialog yet
@@ -201,42 +187,6 @@ class App(QMainWindow):
             self.viewTrainImagesDialog = ViewImagesDialog(
                 'View Test Images', self.test_dataset)
             self.viewTrainImagesDialog.exec_()
-
-    def clear(self):
-        clear_canvas = QtGui.QPixmap(self.canvas.pixmap().size())
-        clear_canvas.fill(QtGui.QColor("white"))
-        self.canvas.setPixmap(clear_canvas)
-
-    def recognize(self):
-        # model = self.trainingDialog.model.eval()
-        # if self.trainingDialog != []:
-        #     model = self.trainingDialog.model.eval()
-        # else:
-        #     model = Net()
-        #     model.load_state_dict(torch.load(./))
-        
-        model = Net()
-        model.load_state_dict(torch.load('./mnist_model.zip'))
-        model.eval()
-
-        img = cv2.imread('./images/user_drawing.png')
-        img = cv2.resize(img, (28,28), interpolation= cv2.INTER_AREA)
-        # print(data)
-        
-        output = model(torch.Tensor(img))
-        print(output)
-        prediction = torch.argmax(output)
-        print(prediction)
-
-    def save(self):
-        self.canvas.pixmap().save('./images/user_drawing.png')
-
-        imageSavedDialog = QMessageBox()
-        imageSavedDialog.setWindowTitle('Image saved')
-        imageSavedDialog.setIcon(QMessageBox.Information)
-        imageSavedDialog.setText('Your drawing has been saved to "./images/user_drawing.png"')
-
-        imageSavedDialog.exec_()
 
 
 if __name__ == '__main__':
