@@ -96,7 +96,7 @@ class App(QMainWindow):
     def mouseMoveEvent(self, e):
         painter = QtGui.QPainter(self.canvas.pixmap())
         p = painter.pen()
-        p.setWidth(20)
+        p.setWidth(40)
         p.setCapStyle(0x20)
 
         painter.setPen(p)
@@ -224,54 +224,55 @@ class App(QMainWindow):
 
     def recognize(self):
         self.save(False)
-        
-        # model = self.trainingDialog.model.eval()
-        # if self.trainingDialog != []:
-        #     model = self.trainingDialog.model.eval()
-        # else:
-        #     model = Net()
-        #     model.load_state_dict(torch.load(./))
 
-        model = Net()
-        model.load_state_dict(torch.load('./mnist_model.zip'))
-        model.eval()
+        if not path.exists('./images/'):
+            makedirs('./images')
+            img = Image.new('L', (28,28), (255, 255, 255))
+            img.save("user_drawing.png", "png")
 
-        # img = cv2.imread('./images/user_drawing.png', cv2.IMREAD_GRAYSCALE)
-        # img = cv2.resize(img, (28,28))
-        
-        img = Image.open('./images/user_drawing.png')
-        img = img.resize((28, 28))
-        img = img.convert('L')
-        img = np.invert(img)
-        img = np.split(img, 28)
-        img = np.array(img)
+        if path.exists('./mnist_model.zip'):
+            model = Net()
+            model.load_state_dict(torch.load('./mnist_model.zip'))
+            model.eval()
+            
+            img = Image.open('./images/user_drawing.png', 'r')
+            img = img.resize((28, 28))
+            img.save('./images/user_drawing_1.png')
+            img = img.convert('L')
+            img = np.array(img)
+            img = 255 - img
+            gimg = Image.fromarray(img, 'L')
+            gimg.save('./images/user_drawing_2.png')
+            img = np.split(img, 28)
+            img = np.array(img)
 
-        #img = img / 255
-        #img = np.array(img)
-        # img = img.astype('float32')
-        # img = img.reshape(1, 28, 28, 1)
-        # img = 255-img
-        # img /= 255
+            output = model(torch.Tensor(img))
+            print(output)
+            prediction = torch.argmax(output)
+            print(prediction.item())
+            self.classDetected.setText(str(prediction.item()))
+        else:
+            imageSavedDialog = QMessageBox()
+            imageSavedDialog.setWindowTitle('Model missing')
+            imageSavedDialog.setIcon(QMessageBox.Critical)
+            imageSavedDialog.setText("You must first train a model by going to File > Train Model and click Train")
 
-        output = model(torch.Tensor(img))
-        print(output)
-        prediction = torch.argmax(output)
-        print(prediction.item())
-        self.classDetected.setText(str(prediction.item()))
+            imageSavedDialog.exec_()
+
 
     def save(self, showDialog: bool):
-        imgPath = './images/user_drawing.png'
+        imgPath = './images'
 
         if not path.exists(imgPath):
             makedirs(imgPath)
 
-        self.canvas.pixmap().save(imgPath)
+        self.canvas.pixmap().save(f"{imgPath}/user_drawing.png")
 
         if (showDialog):
             imageSavedDialog = QMessageBox()
             imageSavedDialog.setWindowTitle('Image saved')
             imageSavedDialog.setIcon(QMessageBox.Information)
-            imageSavedDialog.setText(f'Your drawing has been saved to "{imgPath}"')
+            imageSavedDialog.setText(f'Your drawing has been saved to "{imgPath}/user_drawing.png"')
 
             imageSavedDialog.exec_()
 
