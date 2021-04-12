@@ -12,7 +12,7 @@ from torchvision import datasets, transforms
 import time
 
 from TrainingWorker import TrainingWorker
-
+from Net import Net
 
 class TrainingDialog(QDialog):
 
@@ -20,6 +20,7 @@ class TrainingDialog(QDialog):
         super().__init__()
         self.train_dataset = []
         self.test_dataset = []
+        self.model = []
 
         # trainingWorker created here to allow cancelButton to know what trainingWorker.stop refers to initially
         self.trainingWorker = TrainingWorker()
@@ -131,6 +132,7 @@ class TrainingDialog(QDialog):
         # Signal logic
         self.trainingWorker.progressText.connect(self.setProgressText)
         self.trainingWorker.progressBar.connect(self.setProgressBar)
+        self.trainingWorker.getModel.connect(self.setModel)
 
         self.thread.start()
 
@@ -157,6 +159,10 @@ class TrainingDialog(QDialog):
     def setProgressBar(self, value: int):
 
         self.progressBar.setValue(value)
+
+    def setModel(self, model: Net):
+
+        self.model = model
 
     def getTrainSet(self):
 

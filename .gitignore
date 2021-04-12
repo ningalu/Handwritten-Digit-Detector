@@ -148,3 +148,4 @@ images/
 
 # test
 scripts/test.py
+mnist_model.zip

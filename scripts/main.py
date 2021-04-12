@@ -6,7 +6,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
 
 
-import cv2
 import torch
 import numpy as np
 from PIL import Image
@@ -14,6 +13,7 @@ from PIL import Image
 from os import makedirs, path
 from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
+from Net import Net
 
 
 class App(QMainWindow):
@@ -136,7 +136,7 @@ class App(QMainWindow):
         self.buttonLayout.setSpacing(0)
         self.buttonLayout.setContentsMargins(0, 0, 0, 0)
 
-        # Create buttons
+                # Create buttons
         self.clearButton = QPushButton('Clear')
         self.clearButton.setShortcut('Ctrl+Z')
         self.clearButton.clicked.connect(self.clear)
@@ -152,13 +152,18 @@ class App(QMainWindow):
         self.saveButton.clicked.connect(lambda: self.save(True))
 
         # Add buttons to the box
-        self.clear_button = QPushButton('Clear')
-        self.clear_button.clicked.connect(self.clear)
-        #self.buttonLayout.addWidget(self.clear_button)
-        self.buttonLayout.addWidget(self.clear_button)
-        self.buttonLayout.addWidget(QPushButton('Random'))
-        self.buttonLayout.addWidget(QPushButton('Model'))
-        self.buttonLayout.addWidget(QPushButton('Recognize'))
+        self.buttonLayout.addWidget(self.clearButton)
+        self.buttonLayout.addWidget(self.randomButton)
+        self.buttonLayout.addWidget(self.modelButton)
+        self.buttonLayout.addWidget(self.recognizeButton)
+        self.buttonLayout.addWidget(self.saveButton)
+
+        # Create a layout for the class probability display
+        self.classProbLayout = QVBoxLayout()
+        # Add widgets to the box
+        self.classProbLayout.addWidget(QLabel('Class Probability'))
+        self.classProbLayout.addWidget(QLineEdit('Graph of class probability'))
+        self.classProbLayout.addWidget(QLineEdit('Class detected'))
 
         # Create a layout for the class probability display
         self.classProbLayout = QVBoxLayout()
@@ -239,17 +244,24 @@ class App(QMainWindow):
             model = Net()
             model.load_state_dict(torch.load('./mnist_model.zip'))
             model.eval()
-            
-            img = Image.open('./images/user_drawing.png', 'r')
+
+            img = Image.open('./images/user_drawing.png')
             img = img.resize((28, 28))
-            img.save('./images/user_drawing_1.png')
             img = img.convert('L')
-            img = np.array(img)
-            img = 255 - img
-            gimg = Image.fromarray(img, 'L')
-            gimg.save('./images/user_drawing_2.png')
+            img = np.invert(img)
             img = np.split(img, 28)
             img = np.array(img)
+
+            # img = Image.open('./images/user_drawing.png', 'r')
+            # img = img.resize((28, 28))
+            # img.save('./images/user_drawing_1.png')
+            # img = img.convert('L')
+            # img = np.array(img)
+            # img = 255 - img
+            # gimg = Image.fromarray(img, 'L')
+            # gimg.save('./images/user_drawing_2.png')
+            # img = np.split(img, 28)
+            # img = np.array(img)
 
             output = model(torch.Tensor(img))
             print(output)
