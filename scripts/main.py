@@ -108,9 +108,9 @@ class App(QMainWindow):
         # Create a box layout for the canvas
         self.canvasLayout = QVBoxLayout()
         # Create canvas widget
-        self.canvas = QFrame(self)
+        self.canvas = QFrame(self).heightForWidth(self.height())
         self.canvas = QtWidgets.QLabel()
-        self.canvas_size = QtCore.QSize(480, 640)
+        self.canvas_size = QtCore.QSize(self.canvas.height(), self.canvas.height())
         canvas_content = QtGui.QPixmap(self.canvas_size)
         
         
@@ -120,8 +120,8 @@ class App(QMainWindow):
         #    "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
         #Add canvas widget to canvas layout
         self.canvasLayout.addWidget(self.canvas)
-        print("self.canvas size: ", self.canvas.size())
-        print("self.canvas.pixmap size: ", self.canvas.pixmap().size())
+        # print("self.canvas size: ", self.canvas.size())
+        # print("self.canvas.pixmap size: ", self.canvas.pixmap().size())
         # -- Creating Right Side of Layout
         # Create a buttonLayout (a vbox)
         self.buttonLayout = QVBoxLayout()
