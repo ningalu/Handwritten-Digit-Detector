@@ -7,6 +7,10 @@ from PyQt5.QtCore import Qt
 
 import cv2
 import torch
+import numpy as np
+from PIL import Image
+
+from os import makedirs, path
 
 from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
@@ -92,7 +96,7 @@ class App(QMainWindow):
     def mouseMoveEvent(self, e):
         painter = QtGui.QPainter(self.canvas.pixmap())
         p = painter.pen()
-        p.setWidth(8)
+        p.setWidth(20)
         p.setCapStyle(0x20)
 
         painter.setPen(p)
@@ -141,7 +145,7 @@ class App(QMainWindow):
         self.recognizeButton.clicked.connect(self.recognize)
         self.saveButton = QPushButton('Save')
         self.saveButton.setShortcut('Ctrl+S')
-        self.saveButton.clicked.connect(self.save)
+        self.saveButton.clicked.connect(lambda: self.save(True))
 
         # Add buttons to the box
         self.buttonLayout.addWidget(self.clearButton)
@@ -152,10 +156,21 @@ class App(QMainWindow):
 
         # Create a layout for the class probability display
         self.classProbLayout = QVBoxLayout()
+
+        # Create widgets for probability display
+        self.classGraphLabel = QLabel('Class Probability')
+        self.classGraphLabel.setAlignment(Qt.AlignCenter)
+
+        self.classGraph = QLineEdit('Graph of class probability')
+        
+        self.classDetected = QLineEdit('Class detected')
+        self.classDetected.setReadOnly(True)
+        self.classDetected.setAlignment(Qt.AlignCenter)
+
         # Add widgets to the box
-        self.classProbLayout.addWidget(QLabel('Class Probability'))
-        self.classProbLayout.addWidget(QLineEdit('Graph of class probability'))
-        self.classProbLayout.addWidget(QLineEdit('Class detected'))
+        self.classProbLayout.addWidget(self.classGraphLabel)
+        self.classProbLayout.addWidget(self.classGraph)
+        self.classProbLayout.addWidget(self.classDetected)
 
     def showTrainingDialog(self):
         self.trainingDialog = TrainingDialog()
@@ -208,35 +223,57 @@ class App(QMainWindow):
         self.canvas.setPixmap(clear_canvas)
 
     def recognize(self):
+        self.save(False)
+        
         # model = self.trainingDialog.model.eval()
         # if self.trainingDialog != []:
         #     model = self.trainingDialog.model.eval()
         # else:
         #     model = Net()
         #     model.load_state_dict(torch.load(./))
-        
+
         model = Net()
         model.load_state_dict(torch.load('./mnist_model.zip'))
         model.eval()
 
-        img = cv2.imread('./images/user_drawing.png')
-        img = cv2.resize(img, (28,28), interpolation= cv2.INTER_AREA)
-        # print(data)
+        # img = cv2.imread('./images/user_drawing.png', cv2.IMREAD_GRAYSCALE)
+        # img = cv2.resize(img, (28,28))
         
+        img = Image.open('./images/user_drawing.png')
+        img = img.resize((28, 28))
+        img = img.convert('L')
+        img = np.invert(img)
+        img = np.split(img, 28)
+        img = np.array(img)
+
+        #img = img / 255
+        #img = np.array(img)
+        # img = img.astype('float32')
+        # img = img.reshape(1, 28, 28, 1)
+        # img = 255-img
+        # img /= 255
+
         output = model(torch.Tensor(img))
         print(output)
         prediction = torch.argmax(output)
-        print(prediction)
+        print(prediction.item())
+        self.classDetected.setText(str(prediction.item()))
 
-    def save(self):
-        self.canvas.pixmap().save('./images/user_drawing.png')
+    def save(self, showDialog: bool):
+        imgPath = './images/user_drawing.png'
 
-        imageSavedDialog = QMessageBox()
-        imageSavedDialog.setWindowTitle('Image saved')
-        imageSavedDialog.setIcon(QMessageBox.Information)
-        imageSavedDialog.setText('Your drawing has been saved to "./images/user_drawing.png"')
+        if not path.exists(imgPath):
+            makedirs(imgPath)
 
-        imageSavedDialog.exec_()
+        self.canvas.pixmap().save(imgPath)
+
+        if (showDialog):
+            imageSavedDialog = QMessageBox()
+            imageSavedDialog.setWindowTitle('Image saved')
+            imageSavedDialog.setIcon(QMessageBox.Information)
+            imageSavedDialog.setText(f'Your drawing has been saved to "{imgPath}"')
+
+            imageSavedDialog.exec_()
 
 
 if __name__ == '__main__':
