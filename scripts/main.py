@@ -175,21 +175,7 @@ class App(QMainWindow):
         self.classGraphLabel = QLabel('Class Probability')
         self.classGraphLabel.setAlignment(Qt.AlignCenter)
 
-        #self.graph = MplCanvas(self, width=9, height=5, dpi=75)
-        self.figure = plt.figure()
-        self.graph = FigureCanvas(self.figure)
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
-        ax.plot(list(range(0, 10)), '*-')
-        self.graph.draw()
-        
-        #self.classProbLayout.addWidget(QLineEdit('Class detected'))
-
-        # Create a layout for the class probability display
-        #self.classProbLayout = QVBoxLayout()
-
-        # Create widgets for probability display
-        
+        self.init_plot()
 
         self.classGraph = QLineEdit('Graph of class probability')
         
@@ -200,7 +186,6 @@ class App(QMainWindow):
         # Add widgets to the box
         self.classProbLayout.addWidget(self.classGraphLabel)
         self.classProbLayout.addWidget(self.graph)
-        #self.classProbLayout.addWidget(self.classGraph)
         self.classProbLayout.addWidget(self.classDetected)
 
     def showTrainingDialog(self):
@@ -286,16 +271,7 @@ class App(QMainWindow):
             output = model(torch.Tensor(img))
             print(output)
 
-            output_list = output.tolist()[0]
-            print(output_list, "\noutput list length: ", len(output_list))
-            output_list = [0 if i < 0 else i for i in output_list]
-            self.figure.clear()
-            ax = self.figure.add_subplot(111)
-            ax.barh(list(range(0, 10)), output_list)
-            ax.set_yticks(list(range(0, 10)))
-            ax.set_xticks([])
-            
-            self.graph.draw()
+            self.plot_list(output.tolist()[0])
 
             prediction = torch.argmax(output)
             print(prediction.item())
@@ -307,6 +283,20 @@ class App(QMainWindow):
             imageSavedDialog.setText("You must first train a model by going to File > Train Model and click Train")
 
             imageSavedDialog.exec_()
+    
+    def init_plot(self):
+        self.figure = plt.figure()
+        self.graph = FigureCanvas(self.figure)
+        self.plot_list([0]*10)
+
+    def plot_list(self, prob_list):
+        self.figure.clear()
+        prob_list = [0 if i < 0 else i for i in prob_list]
+        ax = self.figure.add_subplot(111)
+        ax.barh(list(range(0, 10)), prob_list)
+        ax.set_yticks(list(range(0, 10)))
+        ax.set_xticks([])
+        self.graph.draw()
 
 
     def save(self, showDialog: bool):
