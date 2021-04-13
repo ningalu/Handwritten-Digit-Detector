@@ -15,16 +15,15 @@ from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
 from Net import Net
 
-import matplotlib
-matplotlib.use('Qt5Agg')
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+import matplotlib.pyplot as plt
 
-class MplCanvas(FigureCanvasQTAgg):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
+#class MplCanvas(FigureCanvasQTAgg):
+#    def __init__(self, parent=None, width=5, height=4, dpi=100):
+#        fig = Figure(figsize=(width, height), dpi=dpi)
+#        self.axes = fig.add_subplot(111)
+#        super(MplCanvas, self).__init__(fig)
 
 class App(QMainWindow):
     def __init__(self):
@@ -176,8 +175,13 @@ class App(QMainWindow):
         self.classGraphLabel = QLabel('Class Probability')
         self.classGraphLabel.setAlignment(Qt.AlignCenter)
 
-        self.graph = MplCanvas(self, width=9, height=5, dpi=50)
-        self.graph.axes.plot([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        #self.graph = MplCanvas(self, width=9, height=5, dpi=75)
+        self.figure = plt.figure()
+        self.graph = FigureCanvas(self.figure)
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        ax.plot(list(range(0, 10)), '*-')
+        self.graph.draw()
         
         #self.classProbLayout.addWidget(QLineEdit('Class detected'))
 
@@ -281,11 +285,15 @@ class App(QMainWindow):
 
             output = model(torch.Tensor(img))
             print(output)
-            output_list = output.tolist()
+
+            output_list = output.tolist()[0]
             print(output_list, "\noutput list length: ", len(output_list))
-            self.graph.axes.cla()
-            self.graph.axes.plot(list(range(0, 10)), output_list[0])
+            output_list = [0 if i < 0 else i for i in output_list]
+            self.figure.clear()
+            ax = self.figure.add_subplot(111)
+            ax.plot(output_list, list(range(0, 10)))
             self.graph.draw()
+
             prediction = torch.argmax(output)
             print(prediction.item())
             self.classDetected.setText(str(prediction.item()))
