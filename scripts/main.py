@@ -291,7 +291,10 @@ class App(QMainWindow):
             output_list = [0 if i < 0 else i for i in output_list]
             self.figure.clear()
             ax = self.figure.add_subplot(111)
-            ax.plot(output_list, list(range(0, 10)))
+            ax.barh(list(range(0, 10)), output_list)
+            ax.set_yticks(list(range(0, 10)))
+            ax.set_xticks([])
+            
             self.graph.draw()
 
             prediction = torch.argmax(output)
