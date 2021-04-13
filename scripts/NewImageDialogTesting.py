@@ -23,14 +23,35 @@ class MainWindow(QtWidgets.QMainWindow):
         self.imageCount = 0
         self.newHBox = QtWidgets.QHBoxLayout()
 
-        # Make a scroll area and set it as MainWindow's central widgets
-        self.scrollArea = QtWidgets.QScrollArea(widgetResizable=True)
-        self.setCentralWidget(self.scrollArea)
+        # Make a centralWidget and set it as MainWindow's central widget
+        self.centralWidget = QtWidgets.QWidget()
+        self.setCentralWidget(self.centralWidget)
+        
+        # Create layouts for our scroll area and progress bar
+        self.scrollAreaLayout = QtWidgets.QVBoxLayout()
+        self.progressBarLayout = QtWidgets.QVBoxLayout()
 
-        # Make a content widget with a HBoxLayout that stores out content_widget (that contains all our images)
+        # Create widgets for scrollArea and progressBar layouts
+        self.scrollArea = QtWidgets.QScrollArea(widgetResizable=True)
+        self.progressBar = QtWidgets.QProgressBar()
+        self.progressBar.setValue(0)
+
+        # Add widgets to our scrollArea and progressBar layouts
+        self.scrollAreaLayout.addWidget(self.scrollArea)
+        self.progressBarLayout.addWidget(self.progressBar)
+
+        # Add scrollArea and progressBar layouts to our mainHBox layout
+        self.mainHBoxLayout = QtWidgets.QHBoxLayout()
+        self.mainHBoxLayout.addLayout(self.scrollAreaLayout)
+        self.mainHBoxLayout.addLayout(self.progressBarLayout)
+
+        # Self central widget's layout to our mainHBox layout
+        self.centralWidget.setLayout(self.mainHBoxLayout)
+
+        # Make a content_widget that stores our image and text layout, add this content_widget to our scrollArea
         content_widget = QtWidgets.QWidget()
+        self.imageAndTextLayout = QtWidgets.QVBoxLayout(content_widget)
         self.scrollArea.setWidget(content_widget)
-        self._lay = QtWidgets.QVBoxLayout(content_widget)
 
         # Create an iterator of our training dataset
         self.test_it = iter(self.train_dataset)
@@ -66,17 +87,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def add_pixmap(self, pixmap, text):
         if not pixmap.isNull():
-            # Our main layout is a VBox
+            # Our main layout is a HBox with two VBoxes in it
             # This function adds 20 VBoxes each containing an image and their text, to an HBox
-            # This HBox is then added to our main layout
+            # This HBox is then added to the Left hand side of our main HBox (the scrollArea VBox layout)
             # In this way we simulate creating a table/adding rows (we are just adding HBoxes to a VBox)
 
-            if (self.imageCount % 20 == 0):
-                # Add the finished HBox (that has 20 images/texts) to our main VBox Layout
-                self._lay.addLayout(self.newHBox)
+            if (self.imageCount % 9 == 0):
+                # Add the finished HBox (that has 20 images/texts) to our scroll area VBox Layout
+                self.imageAndTextLayout.addLayout(self.newHBox)
 
                 # Remake the HBox to start adding data again
                 self.newHBox = QtWidgets.QHBoxLayout()
+
+                # Update our progress bar
+                self.progressBar.setValue((self.imageCount / len(self.test_dataset) * 100))
 
             # Create a new VBox to store the current image and label
             imgAndLabelBox = QtWidgets.QVBoxLayout()
