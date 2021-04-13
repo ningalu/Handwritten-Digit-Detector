@@ -145,7 +145,7 @@ class App(QMainWindow):
         self.buttonLayout.setSpacing(0)
         self.buttonLayout.setContentsMargins(0, 0, 0, 0)
 
-                # Create buttons
+        # Create buttons
         self.clearButton = QPushButton('Clear')
         self.clearButton.setShortcut('Ctrl+Z')
         self.clearButton.clicked.connect(self.clear)
