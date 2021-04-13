@@ -15,6 +15,15 @@ from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
 from Net import Net
 
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+import matplotlib.pyplot as plt
+
+#class MplCanvas(FigureCanvasQTAgg):
+#    def __init__(self, parent=None, width=5, height=4, dpi=100):
+#        fig = Figure(figsize=(width, height), dpi=dpi)
+#        self.axes = fig.add_subplot(111)
+#        super(MplCanvas, self).__init__(fig)
 
 class App(QMainWindow):
     def __init__(self):
@@ -161,16 +170,12 @@ class App(QMainWindow):
         # Create a layout for the class probability display
         self.classProbLayout = QVBoxLayout()
         # Add widgets to the box
-        self.classProbLayout.addWidget(QLabel('Class Probability'))
-        self.classProbLayout.addWidget(QLineEdit('Graph of class probability'))
-        self.classProbLayout.addWidget(QLineEdit('Class detected'))
-
-        # Create a layout for the class probability display
-        self.classProbLayout = QVBoxLayout()
-
-        # Create widgets for probability display
+        
+        #self.classProbLayout.addWidget(QLabel('Class Probability'))
         self.classGraphLabel = QLabel('Class Probability')
         self.classGraphLabel.setAlignment(Qt.AlignCenter)
+
+        self.init_plot()
 
         self.classGraph = QLineEdit('Graph of class probability')
         
@@ -180,7 +185,7 @@ class App(QMainWindow):
 
         # Add widgets to the box
         self.classProbLayout.addWidget(self.classGraphLabel)
-        self.classProbLayout.addWidget(self.classGraph)
+        self.classProbLayout.addWidget(self.graph)
         self.classProbLayout.addWidget(self.classDetected)
 
     def showTrainingDialog(self):
@@ -265,6 +270,9 @@ class App(QMainWindow):
 
             output = model(torch.Tensor(img))
             print(output)
+
+            self.plot_list(output.tolist()[0])
+
             prediction = torch.argmax(output)
             print(prediction.item())
             self.classDetected.setText(str(prediction.item()))
@@ -275,6 +283,20 @@ class App(QMainWindow):
             imageSavedDialog.setText("You must first train a model by going to File > Train Model and click Train")
 
             imageSavedDialog.exec_()
+    
+    def init_plot(self):
+        self.figure = plt.figure()
+        self.graph = FigureCanvas(self.figure)
+        self.plot_list([0]*10)
+
+    def plot_list(self, prob_list):
+        self.figure.clear()
+        prob_list = [0 if i < 0 else i for i in prob_list]
+        ax = self.figure.add_subplot(111)
+        ax.barh(list(range(0, 10)), prob_list)
+        ax.set_yticks(list(range(0, 10)))
+        ax.set_xticks([])
+        self.graph.draw()
 
 
     def save(self, showDialog: bool):
@@ -292,6 +314,8 @@ class App(QMainWindow):
             imageSavedDialog.setText(f'Your drawing has been saved to "{imgPath}/user_drawing.png"')
 
             imageSavedDialog.exec_()
+
+
 
 if __name__ == '__main__':
    app = QApplication(sys.argv)
