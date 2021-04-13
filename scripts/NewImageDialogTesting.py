@@ -20,8 +20,9 @@ class MainWindow(QtWidgets.QMainWindow):
         print(self.test_dataset)
 
         # Make a field to keep track of the number of images produced
-        self.imageCount = 0
+        self.imageCount = 1
         self.newHBox = QtWidgets.QHBoxLayout()
+        # self.pageList = []
 
         # Make a centralWidget and set it as MainWindow's central widget
         self.centralWidget = QtWidgets.QWidget()
@@ -41,20 +42,24 @@ class MainWindow(QtWidgets.QMainWindow):
         self.progressBarLayout.addWidget(self.progressBar)
 
         # Add scrollArea and progressBar layouts to our mainHBox layout
-        self.mainHBoxLayout = QtWidgets.QHBoxLayout()
-        self.mainHBoxLayout.addLayout(self.scrollAreaLayout)
-        self.mainHBoxLayout.addLayout(self.progressBarLayout)
+        self.mainGridLayout = QtWidgets.QGridLayout()
+        self.mainGridLayout.addLayout(self.scrollAreaLayout, 0, 0)
+        self.mainGridLayout.addLayout(self.progressBarLayout, 0, 1)
+        
+        # Resize columns of grid
+        self.mainGridLayout.setColumnStretch(0, 2)
+        self.mainGridLayout.setColumnStretch(1, 1)
 
         # Self central widget's layout to our mainHBox layout
-        self.centralWidget.setLayout(self.mainHBoxLayout)
+        self.centralWidget.setLayout(self.mainGridLayout)
 
         # Make a content_widget that stores our image and text layout, add this content_widget to our scrollArea
         content_widget = QtWidgets.QWidget()
-        self.imageAndTextLayout = QtWidgets.QVBoxLayout(content_widget)
+        self.imageAndTextTable = QtWidgets.QVBoxLayout(content_widget)
         self.scrollArea.setWidget(content_widget)
 
-        # Create an iterator of our training dataset
-        self.test_it = iter(self.train_dataset)
+        # Create an iterator of our test dataset
+        self.test_it = iter(self.test_dataset)
 
         # Create a timer with an interval of 1 ms
         self._timer = QtCore.QTimer(self, interval=1)
@@ -84,6 +89,22 @@ class MainWindow(QtWidgets.QMainWindow):
         # If the iterator reaches its end, StopIteration is raised, and we can stop our timer
         except StopIteration:
             self._timer.stop()
+        
+        if(self.imageCount % 500 == 0):
+            self._timer.stop()
+            print(f'{self.imageCount} images created.')
+
+            # Add current widgets (filled with data) in scrollArea layout to a list
+            # self.tempScrollArea = self.scrollArea
+            # self.pageList.append(self.tempScrollArea)
+
+            # Reinit the widgets in the scrollArea layout to be populated again
+            content_widget = QtWidgets.QWidget()
+            self.imageAndTextTable = QtWidgets.QVBoxLayout(content_widget)
+            self.scrollArea.setWidget(content_widget)
+
+            # Start the timer again
+            self._timer.start()
 
     def add_pixmap(self, pixmap, text):
         if not pixmap.isNull():
@@ -92,15 +113,15 @@ class MainWindow(QtWidgets.QMainWindow):
             # This HBox is then added to the Left hand side of our main HBox (the scrollArea VBox layout)
             # In this way we simulate creating a table/adding rows (we are just adding HBoxes to a VBox)
 
-            if (self.imageCount % 9 == 0):
-                # Add the finished HBox (that has 20 images/texts) to our scroll area VBox Layout
-                self.imageAndTextLayout.addLayout(self.newHBox)
+            if (self.imageCount % 11 == 0):
+                # Add the finished HBox (that has 10 images/texts) to our scroll area VBox Layout
+                self.imageAndTextTable.addLayout(self.newHBox)
 
                 # Remake the HBox to start adding data again
                 self.newHBox = QtWidgets.QHBoxLayout()
 
                 # Update our progress bar
-                self.progressBar.setValue((self.imageCount / len(self.test_dataset) * 100))
+                self.progressBar.setValue(int((self.imageCount / (len(self.test_dataset) - 1)) * 100))
 
             # Create a new VBox to store the current image and label
             imgAndLabelBox = QtWidgets.QVBoxLayout()
