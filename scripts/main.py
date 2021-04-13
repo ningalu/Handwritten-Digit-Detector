@@ -176,7 +176,7 @@ class App(QMainWindow):
         self.classGraphLabel = QLabel('Class Probability')
         self.classGraphLabel.setAlignment(Qt.AlignCenter)
 
-        self.graph = MplCanvas(self, width=9, height=5, dpi=60)
+        self.graph = MplCanvas(self, width=9, height=5, dpi=50)
         self.graph.axes.plot([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
         
         #self.classProbLayout.addWidget(QLineEdit('Class detected'))
