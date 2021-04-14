@@ -17,12 +17,12 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.centerWindow()
         self.loadMNIST()
-        print(self.train_dataset)
-        print(self.test_dataset)
+        # print(self.train_dataset)
+        # print(self.test_dataset)
 
         self.createWidgetLayouts()
         self.createWidgets()
-        self.addWidgetsToLayouts()
+        self.addWidgetsToWidgetLayouts()
         self.createCentralLayout()
 
         self.currImageTableLayout = self.imageTableLayouts[0]
@@ -43,30 +43,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # Start the timer for the first time, it will continue to restart and timeout till we call self._timer.stop()
         self._timer.start()
 
-    def createCentralLayout(self):
-        # Make a centralWidget and set it as MainWindow's central widget
-        self.centralWidget = QtWidgets.QWidget()
-        self.setCentralWidget(self.centralWidget)
-
-        # Create a Grid Layout where we will assign our two box layouts
-        grid = QtWidgets.QGridLayout()
-        leftBox = QtWidgets.QVBoxLayout()
-        rightBox = QtWidgets.QVBoxLayout()
-
-        # Add required widget layouts to leftBox
-        leftBox.addLayout(self.stackedTableLayout)
-
-        # Add required widget layouts to rightBox
-        rightBox.addLayout(self.progressBarLayout)
-
-        grid.addLayout(leftBox, 0, 0)
-        grid.addLayout(rightBox, 0, 1)
-
-        # Resize columns of grid
-        grid.setColumnStretch(0, 2)
-        grid.setColumnStretch(1, 1)
-
-        self.centralWidget.setLayout(grid)
+    def centerWindow(self):
+        self.resize(720, 540)
 
     def createWidgetLayouts(self):
         # Create layout for our QStackedLayout that holds all our tables
@@ -89,15 +67,65 @@ class MainWindow(QtWidgets.QMainWindow):
         # Create layout for progress bar
         self.progressBarLayout = QtWidgets.QVBoxLayout()
 
+        # Create layout for nav buttons
+        self.navButtonLayout = QtWidgets.QHBoxLayout()
+
     def createWidgets(self):
+        # Progress Bar
         self.progressBar = QtWidgets.QProgressBar()
 
-    def addWidgetsToLayouts(self):
+        # Nav Buttons (should be disabled till the timer stops)
+        self.prevButton = QtWidgets.QPushButton('Previous')
+        self.prevButton.clicked.connect(
+            lambda: self.setStackedTableIndex('prev'))
+        self.prevButton.setDisabled(True)
+        self.nextButton = QtWidgets.QPushButton('Next')
+        self.nextButton.clicked.connect(
+            lambda: self.setStackedTableIndex('next'))
+        self.nextButton.setDisabled(True)
+
+        # Page number label
+        self.tableNumberLabel = QtWidgets.QLabel('')
+        self.tableNumberLabel.setAlignment(Qt.AlignCenter)
+
+    def addWidgetsToWidgetLayouts(self):
+        # Add progress bar
         self.progressBarLayout.addWidget(self.progressBar)
+
+        # Add nav buttons
+        self.navButtonLayout.addWidget(self.prevButton)
+        self.navButtonLayout.addWidget(self.nextButton)
 
         # Add every scrollAreaLayout to the stackedTableLayout
         for i in range(0, len(self.scrollAreaLayouts)):
             self.stackedTableLayout.addWidget(self.scrollAreaLayouts[i])
+
+    def createCentralLayout(self):
+        # Make a centralWidget and set it as MainWindow's central widget
+        self.centralWidget = QtWidgets.QWidget()
+        self.setCentralWidget(self.centralWidget)
+
+        # Create a Grid Layout where we will assign our two box layouts
+        grid = QtWidgets.QGridLayout()
+        leftBox = QtWidgets.QVBoxLayout()
+        rightBox = QtWidgets.QVBoxLayout()
+
+        # Add required widget layouts to leftBox
+        leftBox.addLayout(self.stackedTableLayout)
+
+        # Add required widget layouts to rightBox
+        rightBox.addLayout(self.progressBarLayout)
+        rightBox.addLayout(self.navButtonLayout)
+        rightBox.addWidget(self.tableNumberLabel)
+
+        grid.addLayout(leftBox, 0, 0)
+        grid.addLayout(rightBox, 0, 1)
+
+        # Resize columns of grid
+        grid.setColumnStretch(0, 3)
+        grid.setColumnStretch(1, 1)
+
+        self.centralWidget.setLayout(grid)
 
     def on_timeout(self):
         try:
@@ -117,9 +145,13 @@ class MainWindow(QtWidgets.QMainWindow):
         except StopIteration:
             self._timer.stop()
 
-            sleep(2)
+            # We can now let the user click the nav buttons
+            self.prevButton.setDisabled(False)
+            self.nextButton.setDisabled(False)
+            # Roll back to the first page
             self.stackedTableLayout.setCurrentIndex(0)
-            print("Changed to 0")
+            # And set the page number
+            self.setTableNumberLabel()
 
         if(self.imageCount % 500) == 0:
             if (self.imageCount < len(self.test_dataset)):
@@ -187,8 +219,25 @@ class MainWindow(QtWidgets.QMainWindow):
                                            train=False,
                                            transform=transforms.ToTensor())
 
-    def centerWindow(self):
-        self.resize(720, 540)
+    def setStackedTableIndex(self, index: str):
+        currTable = self.stackedTableLayout.currentIndex()
+
+        if (index == 'prev' and currTable > 0):
+            self.stackedTableLayout.setCurrentIndex(currTable - 1)
+        elif (index == 'prev'):
+            self.stackedTableLayout.setCurrentIndex(
+                len(self.stackedTableLayout) - 1)
+
+        if (index == 'next' and currTable < len(self.stackedTableLayout) - 1):
+            self.stackedTableLayout.setCurrentIndex(currTable + 1)
+        elif (index == 'next'):
+            self.stackedTableLayout.setCurrentIndex(0)
+
+        self.setTableNumberLabel()
+
+    def setTableNumberLabel(self):
+        self.tableNumberLabel.setText(
+            f'Page: {self.stackedTableLayout.currentIndex() + 1} of {len(self.stackedTableLayout)}')
 
 
 if __name__ == '__main__':
