@@ -7,9 +7,10 @@ from torchvision import datasets, transforms
 
 from PIL import Image
 from PIL.ImageQt import ImageQt
-import io
-# import matplotlib.pyplot as plt
 import numpy as np
+
+from time import sleep
+
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
@@ -19,44 +20,16 @@ class MainWindow(QtWidgets.QMainWindow):
         print(self.train_dataset)
         print(self.test_dataset)
 
+        self.createWidgetLayouts()
+        self.createWidgets()
+        self.addWidgetsToLayouts()
+        self.createCentralLayout()
+
+        self.currImageTableLayout = self.imageTableLayouts[0]
+
         # Make a field to keep track of the number of images produced
         self.imageCount = 1
         self.newHBox = QtWidgets.QHBoxLayout()
-        # self.pageList = []
-
-        # Make a centralWidget and set it as MainWindow's central widget
-        self.centralWidget = QtWidgets.QWidget()
-        self.setCentralWidget(self.centralWidget)
-        
-        # Create layouts for our scroll area and progress bar
-        self.scrollAreaLayout = QtWidgets.QVBoxLayout()
-        self.progressBarLayout = QtWidgets.QVBoxLayout()
-
-        # Create widgets for scrollArea and progressBar layouts
-        self.scrollArea = QtWidgets.QScrollArea(widgetResizable=True)
-        self.progressBar = QtWidgets.QProgressBar()
-        self.progressBar.setValue(0)
-
-        # Add widgets to our scrollArea and progressBar layouts
-        self.scrollAreaLayout.addWidget(self.scrollArea)
-        self.progressBarLayout.addWidget(self.progressBar)
-
-        # Add scrollArea and progressBar layouts to our mainHBox layout
-        self.mainGridLayout = QtWidgets.QGridLayout()
-        self.mainGridLayout.addLayout(self.scrollAreaLayout, 0, 0)
-        self.mainGridLayout.addLayout(self.progressBarLayout, 0, 1)
-        
-        # Resize columns of grid
-        self.mainGridLayout.setColumnStretch(0, 2)
-        self.mainGridLayout.setColumnStretch(1, 1)
-
-        # Self central widget's layout to our mainHBox layout
-        self.centralWidget.setLayout(self.mainGridLayout)
-
-        # Make a content_widget that stores our image and text layout, add this content_widget to our scrollArea
-        content_widget = QtWidgets.QWidget()
-        self.imageAndTextTable = QtWidgets.QVBoxLayout(content_widget)
-        self.scrollArea.setWidget(content_widget)
 
         # Create an iterator of our test dataset
         self.test_it = iter(self.test_dataset)
@@ -70,18 +43,72 @@ class MainWindow(QtWidgets.QMainWindow):
         # Start the timer for the first time, it will continue to restart and timeout till we call self._timer.stop()
         self._timer.start()
 
+    def createCentralLayout(self):
+        # Make a centralWidget and set it as MainWindow's central widget
+        self.centralWidget = QtWidgets.QWidget()
+        self.setCentralWidget(self.centralWidget)
+
+        # Create a Grid Layout where we will assign our two box layouts
+        grid = QtWidgets.QGridLayout()
+        leftBox = QtWidgets.QVBoxLayout()
+        rightBox = QtWidgets.QVBoxLayout()
+
+        # Add required widget layouts to leftBox
+        leftBox.addLayout(self.stackedTableLayout)
+
+        # Add required widget layouts to rightBox
+        rightBox.addLayout(self.progressBarLayout)
+
+        grid.addLayout(leftBox, 0, 0)
+        grid.addLayout(rightBox, 0, 1)
+
+        # Resize columns of grid
+        grid.setColumnStretch(0, 2)
+        grid.setColumnStretch(1, 1)
+
+        self.centralWidget.setLayout(grid)
+
+    def createWidgetLayouts(self):
+        # Create layout for our QStackedLayout that holds all our tables
+        self.stackedTableLayout = QtWidgets.QStackedLayout()
+
+        # Create layouts for our scrollAreas
+        self.scrollAreaLayouts = []
+        for i in range(0, int(len(self.test_dataset) / 500)):
+            self.scrollAreaLayouts.append(
+                QtWidgets.QScrollArea(widgetResizable=True))
+
+        # Create layouts for our imageTables, and set the content_widget for the imageTables and scrollAreas
+        self.imageTableLayouts = []
+        for i in range(0, len(self.scrollAreaLayouts)):
+            content_widget = QtWidgets.QWidget()
+            self.imageTableLayouts.append(
+                QtWidgets.QVBoxLayout(content_widget))
+            self.scrollAreaLayouts[i].setWidget(content_widget)
+
+        # Create layout for progress bar
+        self.progressBarLayout = QtWidgets.QVBoxLayout()
+
+    def createWidgets(self):
+        self.progressBar = QtWidgets.QProgressBar()
+
+    def addWidgetsToLayouts(self):
+        self.progressBarLayout.addWidget(self.progressBar)
+
+        # Add every scrollAreaLayout to the stackedTableLayout
+        for i in range(0, len(self.scrollAreaLayouts)):
+            self.stackedTableLayout.addWidget(self.scrollAreaLayouts[i])
+
     def on_timeout(self):
         try:
             file = next(self.test_it)
             image, label = file
             npImg = image.numpy()[0]
-            twod_npImg = (np.reshape(npImg, (28,28)) * 255).astype(np.uint8)
-            # plt.imshow(twod_npImg)
-            # plt.show()
+            twod_npImg = (np.reshape(npImg, (28, 28)) * 255).astype(np.uint8)
 
             PILImg = Image.fromarray(twod_npImg, 'L')
             qimg = ImageQt(PILImg)
-                
+
             pixmap = QtGui.QPixmap.fromImage(qimg)
 
             self.add_pixmap(pixmap, label)
@@ -89,22 +116,29 @@ class MainWindow(QtWidgets.QMainWindow):
         # If the iterator reaches its end, StopIteration is raised, and we can stop our timer
         except StopIteration:
             self._timer.stop()
-        
-        if(self.imageCount % 500 == 0):
-            self._timer.stop()
-            print(f'{self.imageCount} images created.')
 
-            # Add current widgets (filled with data) in scrollArea layout to a list
-            # self.tempScrollArea = self.scrollArea
-            # self.pageList.append(self.tempScrollArea)
+            sleep(2)
+            self.stackedTableLayout.setCurrentIndex(0)
+            print("Changed to 0")
 
-            # Reinit the widgets in the scrollArea layout to be populated again
-            content_widget = QtWidgets.QWidget()
-            self.imageAndTextTable = QtWidgets.QVBoxLayout(content_widget)
-            self.scrollArea.setWidget(content_widget)
+        if(self.imageCount % 500) == 0:
+            if (self.imageCount < len(self.test_dataset)):
+                self._timer.stop()
+                print(f'{self.imageCount} images created.')
 
-            # Start the timer again
-            self._timer.start()
+                # Make the newly finished imageTable visible
+                self.stackedTableLayout.setCurrentIndex(
+                    int(self.imageCount / 500))
+
+                # Change the currImageTableLayout
+                self.currImageTableLayout = self.imageTableLayouts[int(
+                    self.imageCount / 500)]
+
+                # Start the timer again
+                self._timer.start()
+            else:
+                print(f'{self.imageCount} images created.')
+            # pass
 
     def add_pixmap(self, pixmap, text):
         if not pixmap.isNull():
@@ -113,15 +147,16 @@ class MainWindow(QtWidgets.QMainWindow):
             # This HBox is then added to the Left hand side of our main HBox (the scrollArea VBox layout)
             # In this way we simulate creating a table/adding rows (we are just adding HBoxes to a VBox)
 
-            if (self.imageCount % 11 == 0):
-                # Add the finished HBox (that has 10 images/texts) to our scroll area VBox Layout
-                self.imageAndTextTable.addLayout(self.newHBox)
+            if (self.imageCount % 10 == 0):
+                # Add the finished HBox (that has 10 images/texts) to our current imageTableLayout
+                self.currImageTableLayout.addLayout(self.newHBox)
 
                 # Remake the HBox to start adding data again
                 self.newHBox = QtWidgets.QHBoxLayout()
 
                 # Update our progress bar
-                self.progressBar.setValue(int((self.imageCount / (len(self.test_dataset) - 1)) * 100))
+                self.progressBar.setValue(
+                    int((self.imageCount / (len(self.test_dataset) - 1)) * 100))
 
             # Create a new VBox to store the current image and label
             imgAndLabelBox = QtWidgets.QVBoxLayout()
@@ -142,15 +177,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.imageCount += 1
 
     def loadMNIST(self):
-            # MNIST Dataset
-            self.train_dataset = datasets.MNIST(root='./mnist_data/',
-                                                train=True,
-                                                transform=transforms.ToTensor(),
-                                                download=False)
+        # MNIST Dataset
+        self.train_dataset = datasets.MNIST(root='./mnist_data/',
+                                            train=True,
+                                            transform=transforms.ToTensor(),
+                                            download=False)
 
-            self.test_dataset = datasets.MNIST(root='./mnist_data/',
-                                            train=False,
-                                            transform=transforms.ToTensor())
+        self.test_dataset = datasets.MNIST(root='./mnist_data/',
+                                           train=False,
+                                           transform=transforms.ToTensor())
 
     def centerWindow(self):
         self.resize(720, 540)
