@@ -38,9 +38,6 @@ class ViewImagesDialog(QtWidgets.QDialog):
     def initUI(self):
         self.setWindowTitle(self.title)
         self.centerWindow()
-        # self.loadMNIST()
-        # print(self.train_dataset)
-        # print(self.test_dataset)
 
         self.createWidgetLayouts()
         self.createWidgets()
@@ -105,9 +102,6 @@ class ViewImagesDialog(QtWidgets.QDialog):
             self.stackedTableLayout.addWidget(self.scrollAreaLayouts[i])
 
     def createCentralLayout(self):
-        # Make a centralWidget and set it as MainWindow's central widget
-        #self.centralWidget = QtWidgets.QWidget()
-        #self.setCentralWidget(self.centralWidget)
 
         # Create a Grid Layout where we will assign our two box layouts
         grid = QtWidgets.QGridLayout()
@@ -211,17 +205,6 @@ class ViewImagesDialog(QtWidgets.QDialog):
             self.newHBox.addLayout(imgAndLabelBox)
 
             self.imageCount += 1
-
-    # def loadMNIST(self):
-    #     # MNIST Dataset
-    #     self.train_dataset = datasets.MNIST(root='./mnist_data/',
-    #                                         train=True,
-    #                                         transform=transforms.ToTensor(),
-    #                                         download=False)
-
-    #     self.test_dataset = datasets.MNIST(root='./mnist_data/',
-    #                                        train=False,
-    #                                        transform=transforms.ToTensor())
 
     def setStackedTableIndex(self, index: str):
         currTable = self.stackedTableLayout.currentIndex()
