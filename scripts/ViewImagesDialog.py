@@ -2,7 +2,7 @@ import os
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QGridLayout, QStackedLayout
-from PyQt5.QtWidgets import QWidget, QScrollArea, QProgressBar, QLabel, QPushButton
+from PyQt5.QtWidgets import QWidget, QScrollArea, QProgressBar, QLabel, QPushButton, QCheckBox, QFrame
 from PyQt5.QtCore import Qt
 
 from torchvision import datasets, transforms
@@ -28,13 +28,13 @@ class ViewImagesDialog(QDialog):
         # Create an iterator of our dataset
         self.dataset_it = iter(self.dataset)
 
-        # Create a timer with an interval of 1 ms
-        self.timer = QtCore.QTimer(self, interval=1)
+        # Create a timer with an interval of 0s (as soon as it can timeout)
+        self.timer = QtCore.QTimer(self, interval=0)
 
-        # Everytime 1 second is reached , execute the on_timeout function
+        # Everytime 1 second is reached , execute the onTimeout function
         self.timer.timeout.connect(self.onTimeout)
 
-        # Start the timer for the first time, it will continue to restart and timeout till we call self._timer.stop()
+        # Start the timer for the first time, it will continue to restart and timeout till we call self.timer.stop()
         self.timer.start()
 
     def initUI(self):
@@ -67,17 +67,44 @@ class ViewImagesDialog(QDialog):
                 QVBoxLayout(content_widget))
             self.scrollAreaLayouts[i].setWidget(content_widget)
 
-        # Create layout for progress bar
-        self.progressBarLayout = QVBoxLayout()
+        # Create layout to hold the filter and progress layouts
+        self.filterAndProgressLayout = QVBoxLayout()
 
-        # Create layout for nav buttons
+        # Create filter layout
+        self.filterLabelLayout = QHBoxLayout()
+
+        self.checkBoxLayoutOne = QHBoxLayout()
+        self.checkBoxLayoutTwo = QHBoxLayout()
+
+        self.filterLayout = QVBoxLayout()
+        self.filterLayout.addLayout(self.filterLabelLayout)
+        self.filterLayout.addLayout(self.checkBoxLayoutOne)
+        self.filterLayout.addLayout(self.checkBoxLayoutTwo)
+        self.filterLayout.setAlignment(Qt.AlignTop)
+
+        # Create layout for progress bar and run button
+        self.progressLayout = QHBoxLayout()
+        self.progressLayout.setAlignment(Qt.AlignTop)
+
+        # Create layout for nav buttons and the general nav layout
         self.navButtonLayout = QHBoxLayout()
+        self.tableNumberLabelLayout = QVBoxLayout()
+        self.navLayout = QVBoxLayout()
+        self.navLayout.setAlignment(Qt.AlignBottom)
 
     def createWidgets(self):
-        # Progress Bar
-        self.progressBar = QProgressBar()
+        # Filter label and checkboxes
+        self.filterLabel = QLabel('Filters:')
 
-        # Nav Buttons (should be disabled till the timer stops)
+        self.checkBoxes = [] 
+        for i in range(0, 11):
+            self.checkBoxes.append(QCheckBox(str(i)))
+
+        # Progress Bar and run button
+        self.progressBar = QProgressBar()
+        self.loadButton = QPushButton('Load')
+
+        # Nav Buttons (should be disabled till the timer stops) and tableNumberLabel
         self.prevButton = QPushButton('Previous')
         self.prevButton.clicked.connect(
             lambda: self.setStackedTableIndex('prev'))
@@ -87,24 +114,36 @@ class ViewImagesDialog(QDialog):
             lambda: self.setStackedTableIndex('next'))
         self.nextButton.setDisabled(True)
 
-        # Page number label
         self.tableNumberLabel = QLabel('')
         self.tableNumberLabel.setAlignment(Qt.AlignCenter)
 
     def addWidgetsToWidgetLayouts(self):
-        # Add progress bar
-        self.progressBarLayout.addWidget(self.progressBar)
-
-        # Add nav buttons
-        self.navButtonLayout.addWidget(self.prevButton)
-        self.navButtonLayout.addWidget(self.nextButton)
-
         # Add every scrollAreaLayout to the stackedTableLayout
         for i in range(0, len(self.scrollAreaLayouts)):
             self.stackedTableLayout.addWidget(self.scrollAreaLayouts[i])
 
-    def createCentralLayout(self):
+        # Add filter label and checkboxes
+        self.filterLabelLayout.addWidget(self.filterLabel)
+        for i in range(0, 5):
+            self.checkBoxLayoutOne.addWidget(self.checkBoxes[i])
+            self.checkBoxLayoutTwo.addWidget(self.checkBoxes[i + 5])
 
+        # Add progress bar and load button
+        self.progressLayout.addWidget(self.loadButton)
+        self.progressLayout.addWidget(self.progressBar)
+
+        # Add nav buttons and tableNumberLabel
+        self.navButtonLayout.addWidget(self.prevButton)
+        self.navButtonLayout.addWidget(self.nextButton)
+        self.tableNumberLabelLayout.addWidget(self.tableNumberLabel)
+
+        self.navLayout.addLayout(self.navButtonLayout)
+        self.navLayout.addLayout(self.tableNumberLabelLayout)
+
+        self.filterAndProgressLayout.addLayout(self.filterLayout)
+        self.filterAndProgressLayout.addLayout(self.progressLayout)
+
+    def createCentralLayout(self):
         # Create a Grid Layout where we will assign our two box layouts
         grid = QGridLayout()
         leftBox = QVBoxLayout()
@@ -114,9 +153,8 @@ class ViewImagesDialog(QDialog):
         leftBox.addLayout(self.stackedTableLayout)
 
         # Add required widget layouts to rightBox
-        rightBox.addLayout(self.progressBarLayout)
-        rightBox.addLayout(self.navButtonLayout)
-        rightBox.addWidget(self.tableNumberLabel)
+        rightBox.addLayout(self.filterAndProgressLayout)
+        rightBox.addLayout(self.navLayout)
 
         grid.addLayout(leftBox, 0, 0)
         grid.addLayout(rightBox, 0, 1)
@@ -139,7 +177,7 @@ class ViewImagesDialog(QDialog):
 
             pixmap = QtGui.QPixmap.fromImage(qimg)
 
-            self.add_pixmap(pixmap, label)
+            self.addPixmap(pixmap, label)
 
         # If the iterator reaches its end, StopIteration is raised, and we can stop our timer
         except StopIteration:
@@ -170,13 +208,11 @@ class ViewImagesDialog(QDialog):
                 self.timer.start()
             else:
                 print(f'{self.imageCount} images created.')
-            # pass
 
-    def add_pixmap(self, pixmap, text):
+    def addPixmap(self, pixmap, text):
         if not pixmap.isNull():
-            # Our main layout is a HBox with two VBoxes in it
-            # This function adds 20 VBoxes each containing an image and their text, to an HBox
-            # This HBox is then added to the Left hand side of our main HBox (the scrollArea VBox layout)
+            # This function adds 10 VBoxes each containing an image and their text, to an HBox
+            # This HBox is then added to the scrollArea Vbox in the Right hand side of our main grid
             # In this way we simulate creating a table/adding rows (we are just adding HBoxes to a VBox)
 
             if (self.imageCount % 10 == 0):

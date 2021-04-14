@@ -5,19 +5,19 @@ from PyQt5.QtWidgets import QMessageBox
 from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
 
-
 import torch
 import numpy as np
 from PIL import Image
 
 from os import makedirs, path
-from TrainingDialog import TrainingDialog
-from ViewImagesDialog import ViewImagesDialog
-from Net import Net
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
+
+from TrainingDialog import TrainingDialog
+from ViewImagesDialog import ViewImagesDialog
+from Net import Net
 
 #class MplCanvas(FigureCanvasQTAgg):
 #    def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -126,7 +126,7 @@ class App(QMainWindow):
         # Create canvas widget
         self.canvas = QFrame(self).heightForWidth(self.height())
         self.canvas = QtWidgets.QLabel()
-        self.canvas_size = QtCore.QSize(self.canvas.height(), self.canvas.height())
+        self.canvas_size = QtCore.QSize(self.canvas.height() + self.menuBar().frameSize().height(), self.canvas.height() + self.menuBar().frameSize().height())
         canvas_content = QtGui.QPixmap(self.canvas_size)
         
         
