@@ -28,15 +28,6 @@ class ViewImagesDialog(QDialog):
         # Create an iterator of our dataset
         self.dataset_it = iter(self.dataset)
 
-        # Create a timer with an interval of 0s (as soon as it can timeout)
-        self.timer = QtCore.QTimer(self, interval=0)
-
-        # Everytime 1 second is reached , execute the onTimeout function
-        self.timer.timeout.connect(self.onTimeout)
-
-        # Start the timer for the first time, it will continue to restart and timeout till we call self.timer.stop()
-        self.timer.start()
-
     def initUI(self):
         self.setWindowTitle(self.title)
         self.centerWindow()
@@ -102,7 +93,9 @@ class ViewImagesDialog(QDialog):
 
         # Progress Bar and run button
         self.progressBar = QProgressBar()
+        self.progressBar.setValue(0)
         self.loadButton = QPushButton('Load')
+        self.loadButton.clicked.connect(self.loadImages)
 
         # Nav Buttons (should be disabled till the timer stops) and tableNumberLabel
         self.prevButton = QPushButton('Previous')
@@ -164,6 +157,16 @@ class ViewImagesDialog(QDialog):
         grid.setColumnStretch(1, 1)
 
         self.setLayout(grid)
+
+    def loadImages(self):
+        # Create a timer with an interval of 0s (as soon as it can timeout)
+        self.timer = QtCore.QTimer(self, interval=0)
+
+        # Everytime 1 second is reached , execute the onTimeout function
+        self.timer.timeout.connect(self.onTimeout)
+
+        # Start the timer for the first time, it will continue to restart and timeout till we call self.timer.stop()
+        self.timer.start()
 
     def onTimeout(self):
         try:
