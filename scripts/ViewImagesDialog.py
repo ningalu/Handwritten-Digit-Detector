@@ -1,181 +1,244 @@
-from __future__ import print_function
-from math import ceil
-
-import sys
-from PyQt5.QtWidgets import QApplication, QDesktopWidget, QWidget, qApp, QHBoxLayout, QVBoxLayout
-from PyQt5.QtWidgets import QDialog, QFileDialog
-from PyQt5.QtWidgets import QPushButton, QTextEdit, QProgressBar, QLabel
-from PyQt5.QtGui import QIcon, QPixmap
+import os
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QSizePolicy
 from PyQt5.QtCore import Qt
 
-import time
-import matplotlib.pyplot as plt
+from torchvision import datasets, transforms
+
+from PIL import Image
+from PIL.ImageQt import ImageQt
 import numpy as np
-import torchvision
-
-from os import makedirs, path
 
 
-class ViewImagesDialog(QDialog):
-
+class ViewImagesDialog(QtWidgets.QDialog):
     def __init__(self, title, dataset):
         super().__init__()
-        # -- Creating a field for our layout for easy changes, and initialising the loading (progress) bar UI
-        self.mainVBoxLayout = QVBoxLayout()
-        self.initLoadingUI()
-
-        # -- Logic for creating the images needed
-        self.title = title
         self.dataset = dataset
+        self.title = title
 
-        if ('train' in self.title.lower()):
-            self.dirString = './images/train'
-        else:
-            self.dirString = './images/test'
-
-        self.imageList = []
-        self.createImageList()
-        self.saveImages()
-
-        self.imageLabel = 0
-        self.viewImageIndex = 0
-
-        # -- Deletion of the layout for the progress bar, addition of the actual layout
-        self.deleteOldLayout()
         self.initUI()
+        self.currImageTableLayout = self.imageTableLayouts[0]
 
-    def initLoadingUI(self):
-        self.setWindowTitle('Loading Images')
-        self.resize(320, 90)
+        # Make a field to keep track of the number of images produced
+        self.imageCount = 1
+        self.newHBox = QtWidgets.QHBoxLayout()
 
-        self.progressBar = QProgressBar()
-        self.progressBar.setValue(0)
+        # Create an iterator of our dataset
+        self.dataset_it = iter(self.dataset)
 
-        self.progressBarLayout = QHBoxLayout()
-        self.progressBarLayout.addWidget(self.progressBar)
+        # Create a timer with an interval of 1 ms
+        self._timer = QtCore.QTimer(self, interval=1)
 
-        self.mainVBoxLayout.addLayout(self.progressBarLayout)
-        self.setLayout(self.mainVBoxLayout)
+        # Everytime 1 second is reached , execute the on_timeout function
+        self._timer.timeout.connect(self.on_timeout)
 
-        self.show()
-        QApplication.processEvents()
+        # Start the timer for the first time, it will continue to restart and timeout till we call self._timer.stop()
+        self._timer.start()
 
     def initUI(self):
         self.setWindowTitle(self.title)
+        self.centerWindow()
+        # self.loadMNIST()
+        # print(self.train_dataset)
+        # print(self.test_dataset)
+
         self.createWidgetLayouts()
-        self.createDialogLayout()
+        self.createWidgets()
+        self.addWidgetsToWidgetLayouts()
+        self.createCentralLayout()
 
-        self.centreWindow()
-        self.show()
-
-    def centreWindow(self):
-        self.move(810, 245)
+    def centerWindow(self):
+        self.resize(720, 540)
 
     def createWidgetLayouts(self):
-        # Create imageName and imageLabel (and set the default image to 1, 100)
-        self.imageName = QLabel()
-        self.imageName.setText('Data 1,100 (from left to right)')
-        self.imageName.setAlignment(Qt.AlignCenter)
+        # Create layout for our QStackedLayout that holds all our tables
+        self.stackedTableLayout = QtWidgets.QStackedLayout()
 
-        self.imageLabel = QLabel()
-        pixmap = QPixmap(f'{self.dirString}/1,100.png')
-        self.imageLabel.setPixmap(pixmap)
-        self.imageLabel.setAlignment(Qt.AlignCenter)
+        # Create layouts for our scrollAreas
+        self.scrollAreaLayouts = []
+        for i in range(0, int(len(self.dataset) / 500)):
+            self.scrollAreaLayouts.append(
+                QtWidgets.QScrollArea(widgetResizable=True))
 
-        # Create imageLayout and add the imageLabel and name to it
-        self.imageLayout = QVBoxLayout()
-        self.imageLayout.addWidget(self.imageLabel)
-        self.imageLayout.addWidget(self.imageName)
+        # Create layouts for our imageTables, and set the content_widget for the imageTables and scrollAreas
+        self.imageTableLayouts = []
+        for i in range(0, len(self.scrollAreaLayouts)):
+            content_widget = QtWidgets.QWidget()
+            self.imageTableLayouts.append(
+                QtWidgets.QVBoxLayout(content_widget))
+            self.scrollAreaLayouts[i].setWidget(content_widget)
 
-        # Create the navigation buttons needed and put them in their own HBox
-        self.previousButton = QPushButton('Previous')
-        self.previousButton.clicked.connect(self.prevImage)
-        self.nextButton = QPushButton('Next')
-        self.nextButton.clicked.connect(self.nextImage)
+        # Create layout for progress bar
+        self.progressBarLayout = QtWidgets.QVBoxLayout()
 
-        self.navLayout = QHBoxLayout()
-        self.navLayout.addWidget(self.previousButton)
-        self.navLayout.addWidget(self.nextButton)
+        # Create layout for nav buttons
+        self.navButtonLayout = QtWidgets.QHBoxLayout()
 
-        # Create the select image button
-        self.selectButton = QPushButton('Select image')
-        self.selectButton.clicked.connect(self.openImageFileDialog)
+    def createWidgets(self):
+        # Progress Bar
+        self.progressBar = QtWidgets.QProgressBar()
 
-        # Create buttonLayout and add the buttons to it
-        self.buttonLayout = QVBoxLayout()
-        self.buttonLayout.addLayout(self.navLayout)
-        self.buttonLayout.addWidget(self.selectButton)
+        # Nav Buttons (should be disabled till the timer stops)
+        self.prevButton = QtWidgets.QPushButton('Previous')
+        self.prevButton.clicked.connect(
+            lambda: self.setStackedTableIndex('prev'))
+        self.prevButton.setDisabled(True)
+        self.nextButton = QtWidgets.QPushButton('Next')
+        self.nextButton.clicked.connect(
+            lambda: self.setStackedTableIndex('next'))
+        self.nextButton.setDisabled(True)
 
-    def createDialogLayout(self):
-        # Add our widget layouts to the mainVLayout
-        self.mainVBoxLayout.addLayout(self.imageLayout)
-        self.mainVBoxLayout.addLayout(self.buttonLayout)
-        # QApplication.processEvents()
+        # Page number label
+        self.tableNumberLabel = QtWidgets.QLabel('')
+        self.tableNumberLabel.setAlignment(Qt.AlignCenter)
 
-    def createImageList(self):
-        for i in range(1, len(self.dataset)):
-            # currImage is now a torch.Tensor
-            currImage, _ = self.dataset[i]
-            self.imageList.append(currImage)
+    def addWidgetsToWidgetLayouts(self):
+        # Add progress bar
+        self.progressBarLayout.addWidget(self.progressBar)
 
-    def saveImages(self):
-        if not path.exists(self.dirString):
-            makedirs(self.dirString)
+        # Add nav buttons
+        self.navButtonLayout.addWidget(self.prevButton)
+        self.navButtonLayout.addWidget(self.nextButton)
 
-        for i in range(0, 100):
-            npImg = torchvision.utils.make_grid(
-                self.imageList[(i * 100):(i * 100) + 100])
-            npImg = npImg.numpy()
-            npImg = np.transpose(npImg, (1, 2, 0))
+        # Add every scrollAreaLayout to the stackedTableLayout
+        for i in range(0, len(self.scrollAreaLayouts)):
+            self.stackedTableLayout.addWidget(self.scrollAreaLayouts[i])
 
-            plt.imsave(
-                f'{self.dirString}/{i*100 + 1},{(i*100) + 100}.png', npImg)
+    def createCentralLayout(self):
+        # Make a centralWidget and set it as MainWindow's central widget
+        #self.centralWidget = QtWidgets.QWidget()
+        #self.setCentralWidget(self.centralWidget)
 
-            self.progressBar.setValue(i + 1)
-            QApplication.processEvents()
+        # Create a Grid Layout where we will assign our two box layouts
+        grid = QtWidgets.QGridLayout()
+        leftBox = QtWidgets.QVBoxLayout()
+        rightBox = QtWidgets.QVBoxLayout()
 
-    def prevImage(self):
-        if (self.viewImageIndex > 0):
-            self.viewImageIndex -= 1
-        else:
-            self.viewImageIndex = 99
+        # Add required widget layouts to leftBox
+        leftBox.addLayout(self.stackedTableLayout)
 
-        self.setImage()
+        # Add required widget layouts to rightBox
+        rightBox.addLayout(self.progressBarLayout)
+        rightBox.addLayout(self.navButtonLayout)
+        rightBox.addWidget(self.tableNumberLabel)
 
-    def nextImage(self):
-        if (self.viewImageIndex < 99):
-            self.viewImageIndex += 1
-        else:
-            self.viewImageIndex = 0
+        grid.addLayout(leftBox, 0, 0)
+        grid.addLayout(rightBox, 0, 1)
 
-        self.setImage()
+        # Resize columns of grid
+        grid.setColumnStretch(0, 3)
+        grid.setColumnStretch(1, 1)
 
-    def setImage(self):
-        pixmap = QPixmap(
-            f'{self.dirString}/{self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100}.png')
-        self.imageLabel.setPixmap(pixmap)
+        self.setLayout(grid)
 
-        self.imageName.setText(
-            f'Data {self.viewImageIndex*100 + 1},{(self.viewImageIndex*100) + 100} (from left to right)')
-        QApplication.processEvents()
+    def on_timeout(self):
+        try:
+            file = next(self.dataset_it)
+            image, label = file
+            npImg = image.numpy()[0]
+            twod_npImg = (np.reshape(npImg, (28, 28)) * 255).astype(np.uint8)
 
-    def openImageFileDialog(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(
-            self, "Select the image to be viewed", self.dirString, "PNG Files (*.png)", options=options)
-        if fileName:
-            print(f'{fileName} selected')
+            PILImg = Image.fromarray(twod_npImg, 'L')
+            qimg = ImageQt(PILImg)
 
-            parsedFileName = fileName.split('/')
-            parsedFileName = parsedFileName[-1].split(',')
-            parsedFileName = parsedFileName[0]
-            # print(parsedFileName)
+            pixmap = QtGui.QPixmap.fromImage(qimg)
 
-            self.viewImageIndex = int((int(parsedFileName) - 1) / 100)
-            # print(f'{self.viewImageIndex}')
-            self.setImage()
+            self.add_pixmap(pixmap, label)
 
-    def deleteOldLayout(self):
-        self.mainVBoxLayout.takeAt(0)
-        self.progressBar.setParent(None)
+        # If the iterator reaches its end, StopIteration is raised, and we can stop our timer
+        except StopIteration:
+            self._timer.stop()
+
+            # We can now let the user click the nav buttons
+            self.prevButton.setDisabled(False)
+            self.nextButton.setDisabled(False)
+            # Roll back to the first page
+            self.stackedTableLayout.setCurrentIndex(0)
+            # And set the page number
+            self.setTableNumberLabel()
+
+        if(self.imageCount % 500) == 0:
+            if (self.imageCount < len(self.dataset)):
+                self._timer.stop()
+                print(f'{self.imageCount} images created.')
+
+                # Make the newly finished imageTable visible
+                self.stackedTableLayout.setCurrentIndex(
+                    int(self.imageCount / 500))
+
+                # Change the currImageTableLayout
+                self.currImageTableLayout = self.imageTableLayouts[int(
+                    self.imageCount / 500)]
+
+                # Start the timer again
+                self._timer.start()
+            else:
+                print(f'{self.imageCount} images created.')
+            # pass
+
+    def add_pixmap(self, pixmap, text):
+        if not pixmap.isNull():
+            # Our main layout is a HBox with two VBoxes in it
+            # This function adds 20 VBoxes each containing an image and their text, to an HBox
+            # This HBox is then added to the Left hand side of our main HBox (the scrollArea VBox layout)
+            # In this way we simulate creating a table/adding rows (we are just adding HBoxes to a VBox)
+
+            if (self.imageCount % 10 == 0):
+                # Add the finished HBox (that has 10 images/texts) to our current imageTableLayout
+                self.currImageTableLayout.addLayout(self.newHBox)
+
+                # Remake the HBox to start adding data again
+                self.newHBox = QtWidgets.QHBoxLayout()
+
+                # Update our progress bar
+                self.progressBar.setValue(
+                    int((self.imageCount / (len(self.dataset) - 1)) * 100))
+
+            # Create a new VBox to store the current image and label
+            imgAndLabelBox = QtWidgets.QVBoxLayout()
+
+            # Create the widgets for our image and label, using the vals the add_pixmap function was passed
+            imgLabel = QtWidgets.QLabel(pixmap=pixmap)
+            imgLabel.setAlignment(Qt.AlignCenter)
+            textLabel = QtWidgets.QLabel(text=str(text))
+            textLabel.setAlignment(Qt.AlignCenter)
+
+            # Add the image and text to the VBox
+            imgAndLabelBox.addWidget(imgLabel)
+            imgAndLabelBox.addWidget(textLabel)
+
+            # Add the VBox to our current HBox (row)
+            self.newHBox.addLayout(imgAndLabelBox)
+
+            self.imageCount += 1
+
+    # def loadMNIST(self):
+    #     # MNIST Dataset
+    #     self.train_dataset = datasets.MNIST(root='./mnist_data/',
+    #                                         train=True,
+    #                                         transform=transforms.ToTensor(),
+    #                                         download=False)
+
+    #     self.test_dataset = datasets.MNIST(root='./mnist_data/',
+    #                                        train=False,
+    #                                        transform=transforms.ToTensor())
+
+    def setStackedTableIndex(self, index: str):
+        currTable = self.stackedTableLayout.currentIndex()
+
+        if (index == 'prev' and currTable > 0):
+            self.stackedTableLayout.setCurrentIndex(currTable - 1)
+        elif (index == 'prev'):
+            self.stackedTableLayout.setCurrentIndex(
+                len(self.stackedTableLayout) - 1)
+
+        if (index == 'next' and currTable < len(self.stackedTableLayout) - 1):
+            self.stackedTableLayout.setCurrentIndex(currTable + 1)
+        elif (index == 'next'):
+            self.stackedTableLayout.setCurrentIndex(0)
+
+        self.setTableNumberLabel()
+
+    def setTableNumberLabel(self):
+        self.tableNumberLabel.setText(
+            f'Page: {self.stackedTableLayout.currentIndex() + 1} of {len(self.stackedTableLayout)}')
