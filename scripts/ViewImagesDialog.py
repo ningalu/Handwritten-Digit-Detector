@@ -5,11 +5,10 @@ from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QGridLayout, QStackedLayou
 from PyQt5.QtWidgets import QWidget, QScrollArea, QProgressBar, QLabel, QPushButton, QCheckBox, QFrame
 from PyQt5.QtCore import Qt
 
-from torchvision import datasets, transforms
-
 from PIL import Image
 from PIL.ImageQt import ImageQt
 import numpy as np
+from math import ceil
 
 
 class ViewImagesDialog(QDialog):
@@ -19,14 +18,12 @@ class ViewImagesDialog(QDialog):
         self.title = title
 
         self.initUI()
+        self.chosenFilters = []
         self.currImageTableLayout = self.imageTableLayouts[0]
 
         # Make a field to keep track of the number of images produced
         self.imageCount = 1
         self.newHBox = QHBoxLayout()
-
-        # Create an iterator of our dataset
-        self.dataset_it = iter(self.dataset)
 
     def initUI(self):
         self.setWindowTitle(self.title)
@@ -159,19 +156,53 @@ class ViewImagesDialog(QDialog):
         self.setLayout(grid)
 
     def loadImages(self):
+        # Clear all the imageTableLayouts, and set the current back to 0
+        self.clearImageTableLayouts()
+        self.currImageTableLayout = self.imageTableLayouts[0]
+
+        # Set the progressBar back to 0, and disable the nav buttons again/page numbers
+        self.imageCount = 0
+        self.progressBar.setValue(0)
+        self.prevButton.setDisabled(True)
+        self.nextButton.setDisabled(True)
+        self.tableNumberLabel.setText('')
+
+        # Get the chosen filters before loading
+        self.updateChosenFilters()
+
+        # Determine how many related elements are in the dataset (for progress bar)
+        self.dataset_it = iter(self.dataset)
+        self.numImagesNeeded = 0
+
+        if self.chosenFilters == []:
+            self.numImagesNeeded = len(self.dataset)
+        else:
+            for i in range(0, len(self.dataset)):
+                currData = next(self.dataset_it)
+                image, label = currData
+
+                if (str(label) in self.chosenFilters):
+                    self.numImagesNeeded += 1
+
+        # Restart dataset iterator
+        self.dataset_it = iter(self.dataset)
+
         # Create a timer with an interval of 0s (as soon as it can timeout)
         self.timer = QtCore.QTimer(self, interval=0)
 
         # Everytime 1 second is reached , execute the onTimeout function
         self.timer.timeout.connect(self.onTimeout)
 
+        # Disable the load button
+        self.loadButton.setDisabled(True)
+
         # Start the timer for the first time, it will continue to restart and timeout till we call self.timer.stop()
         self.timer.start()
 
     def onTimeout(self):
         try:
-            file = next(self.dataset_it)
-            image, label = file
+            currData = next(self.dataset_it)
+            image, label = currData
             npImg = image.numpy()[0]
             twod_npImg = (np.reshape(npImg, (28, 28)) * 255).astype(np.uint8)
 
@@ -180,7 +211,8 @@ class ViewImagesDialog(QDialog):
 
             pixmap = QtGui.QPixmap.fromImage(qimg)
 
-            self.addPixmap(pixmap, label)
+            if str(label) in self.chosenFilters or self.chosenFilters == []:
+                self.addPixmap(pixmap, label)
 
         # If the iterator reaches its end, StopIteration is raised, and we can stop our timer
         except StopIteration:
@@ -191,13 +223,17 @@ class ViewImagesDialog(QDialog):
             self.nextButton.setDisabled(False)
             # Roll back to the first page
             self.stackedTableLayout.setCurrentIndex(0)
-            # And set the page number
+            # And set the table number label
             self.setTableNumberLabel()
+            # And make sure the progress bar reaches 100
+            self.progressBar.setValue(100)
+            # And the let the user click Load again
+            self.loadButton.setDisabled(False)
 
         if(self.imageCount % 500) == 0:
             if (self.imageCount < len(self.dataset)):
                 self.timer.stop()
-                print(f'{self.imageCount} images created.')
+                # print(f'{self.imageCount} images created.')
 
                 # Make the newly finished imageTable visible
                 self.stackedTableLayout.setCurrentIndex(
@@ -210,7 +246,8 @@ class ViewImagesDialog(QDialog):
                 # Start the timer again
                 self.timer.start()
             else:
-                print(f'{self.imageCount} images created.')
+                # print(f'{self.imageCount} images created.')
+                pass
 
     def addPixmap(self, pixmap, text):
         if not pixmap.isNull():
@@ -227,7 +264,7 @@ class ViewImagesDialog(QDialog):
 
                 # Update our progress bar
                 self.progressBar.setValue(
-                    int((self.imageCount / (len(self.dataset) - 1)) * 100))
+                    int((self.imageCount / self.numImagesNeeded) * 100))
 
             # Create a new VBox to store the current image and label
             imgAndLabelBox = QVBoxLayout()
@@ -252,11 +289,12 @@ class ViewImagesDialog(QDialog):
 
         if (index == 'prev' and currTable > 0):
             self.stackedTableLayout.setCurrentIndex(currTable - 1)
-        elif (index == 'prev'):
-            self.stackedTableLayout.setCurrentIndex(
-                len(self.stackedTableLayout) - 1)
+        elif (index == 'prev' and self.numImagesNeeded == len(self.dataset)):
+            self.stackedTableLayout.setCurrentIndex(int(self.numImagesNeeded/500) - 1)
+        elif (index == 'prev' and self.numImagesNeeded < len(self.dataset)):
+            self.stackedTableLayout.setCurrentIndex(int(self.numImagesNeeded/500))
 
-        if (index == 'next' and currTable < len(self.stackedTableLayout) - 1):
+        if (index == 'next' and currTable < ceil(self.numImagesNeeded/500) - 1):
             self.stackedTableLayout.setCurrentIndex(currTable + 1)
         elif (index == 'next'):
             self.stackedTableLayout.setCurrentIndex(0)
@@ -265,4 +303,23 @@ class ViewImagesDialog(QDialog):
 
     def setTableNumberLabel(self):
         self.tableNumberLabel.setText(
-            f'Page: {self.stackedTableLayout.currentIndex() + 1} of {len(self.stackedTableLayout)}')
+            f'Page: {self.stackedTableLayout.currentIndex() + 1} of {ceil(self.numImagesNeeded/500)}')
+
+    def updateChosenFilters(self):
+        self.chosenFilters = []
+
+        for i in range(0, 11):
+            if self.checkBoxes[i].isChecked():
+                self.chosenFilters.append(str(i))
+
+    def clearImageTableLayouts(self):
+        self.imageTableLayouts = []
+        for i in range(0, len(self.scrollAreaLayouts)):
+            content_widget = QWidget()
+            self.imageTableLayouts.append(
+                QVBoxLayout(content_widget))
+            self.scrollAreaLayouts[i].setWidget(content_widget)
+
+        # Also clear the newHBox to stop the last row from appearing
+        self.newHBox = QHBoxLayout()
+

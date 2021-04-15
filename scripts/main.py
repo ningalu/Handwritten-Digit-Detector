@@ -19,11 +19,6 @@ from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
 from Net import Net
 
-#class MplCanvas(FigureCanvasQTAgg):
-#    def __init__(self, parent=None, width=5, height=4, dpi=100):
-#        fig = Figure(figsize=(width, height), dpi=dpi)
-#        self.axes = fig.add_subplot(111)
-#        super(MplCanvas, self).__init__(fig)
 
 class App(QMainWindow):
     def __init__(self):
@@ -123,21 +118,21 @@ class App(QMainWindow):
         # -- Creating Left Side of Layout
         # Create a box layout for the canvas
         self.canvasLayout = QVBoxLayout()
+
         # Create canvas widget
         self.canvas = QFrame(self).heightForWidth(self.height())
         self.canvas = QtWidgets.QLabel()
         self.canvas_size = QtCore.QSize(self.canvas.height() + self.menuBar().frameSize().height(), self.canvas.height() + self.menuBar().frameSize().height())
         canvas_content = QtGui.QPixmap(self.canvas_size)
-        
-        
         canvas_content.fill(QtGui.QColor("white"))
         self.canvas.setPixmap(canvas_content)
-        #self.canvas.setStyleSheet(
-        #    "QWidget { border: 2px solid cornflowerblue; background-color: white;}")
+
         #Add canvas widget to canvas layout
         self.canvasLayout.addWidget(self.canvas)
+
         # print("self.canvas size: ", self.canvas.size())
         # print("self.canvas.pixmap size: ", self.canvas.pixmap().size())
+
         # -- Creating Right Side of Layout
         # Create a buttonLayout (a vbox)
         self.buttonLayout = QVBoxLayout()
@@ -169,8 +164,8 @@ class App(QMainWindow):
 
         # Create a layout for the class probability display
         self.classProbLayout = QVBoxLayout()
+
         # Add widgets to the box
-        
         #self.classProbLayout.addWidget(QLabel('Class Probability'))
         self.classGraphLabel = QLabel('Class Probability')
         self.classGraphLabel.setAlignment(Qt.AlignCenter)
@@ -314,7 +309,6 @@ class App(QMainWindow):
             imageSavedDialog.setText(f'Your drawing has been saved to "{imgPath}/user_drawing.png"')
 
             imageSavedDialog.exec_()
-
 
 
 if __name__ == '__main__':
