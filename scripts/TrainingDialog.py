@@ -15,6 +15,7 @@ from TrainingWorker import TrainingWorker
 from Net import Net
 
 class TrainingDialog(QDialog):
+    trainingFinished = pyqtSignal(str)
 
     def __init__(self):
         super().__init__()
@@ -133,6 +134,7 @@ class TrainingDialog(QDialog):
         self.trainingWorker.progressText.connect(self.setProgressText)
         self.trainingWorker.progressBar.connect(self.setProgressBar)
         self.trainingWorker.getModel.connect(self.setModel)
+        self.trainingWorker.finished.connect(lambda: self.trainingFinished.emit('PyTorch'))
 
         self.thread.start()
 

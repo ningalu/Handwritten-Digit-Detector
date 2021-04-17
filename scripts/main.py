@@ -200,6 +200,7 @@ class App(QMainWindow):
 
     def showTrainingDialog(self):
         self.trainingDialog = TrainingDialog()
+        self.trainingDialog.trainingFinished.connect(self.selectModel)
         self.trainingDialog.exec_()
 
     def showTrainImagesDialog(self):
