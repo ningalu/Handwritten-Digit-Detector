@@ -17,13 +17,17 @@ import matplotlib.pyplot as plt
 
 from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
+from ModelSelectDialog import ModelSelectDialog
 from Net import Net
 
 
 class App(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.selectedModel = 'None'
+
         self.trainingDialog = 0
+        self.modelSelectDialog = 0
         self.viewTrainImagesDialog = 0
         self.viewTestImagesDialog = 0
         self.initUI()
@@ -144,10 +148,8 @@ class App(QMainWindow):
         self.clearButton = QPushButton('Clear')
         self.clearButton.setShortcut('Ctrl+Z')
         self.clearButton.clicked.connect(self.clear)
-        self.randomButton = QPushButton('Random')
-        # self.randomButton.clicked.connect()
         self.modelButton = QPushButton('Model')
-        # self.modelButton.clicked.connect()
+        self.modelButton.clicked.connect(self.model)
         self.recognizeButton = QPushButton('Recognize')
         self.recognizeButton.setShortcut('Ctrl+R')
         self.recognizeButton.clicked.connect(self.recognize)
@@ -157,7 +159,6 @@ class App(QMainWindow):
 
         # Add buttons to the box
         self.buttonLayout.addWidget(self.clearButton)
-        self.buttonLayout.addWidget(self.randomButton)
         self.buttonLayout.addWidget(self.modelButton)
         self.buttonLayout.addWidget(self.recognizeButton)
         self.buttonLayout.addWidget(self.saveButton)
@@ -183,8 +184,23 @@ class App(QMainWindow):
         self.classProbLayout.addWidget(self.graph)
         self.classProbLayout.addWidget(self.classDetected)
 
+    def init_plot(self):
+        self.figure = plt.figure()
+        self.graph = FigureCanvas(self.figure)
+        self.plot_list([0]*10)
+
+    def plot_list(self, prob_list):
+        self.figure.clear()
+        prob_list = [0 if i < 0 else i for i in prob_list]
+        ax = self.figure.add_subplot(111)
+        ax.barh(list(range(0, 10)), prob_list)
+        ax.set_yticks(list(range(0, 10)))
+        ax.set_xticks([])
+        self.graph.draw()
+
     def showTrainingDialog(self):
         self.trainingDialog = TrainingDialog()
+        self.trainingDialog.trainingFinished.connect(self.selectModel)
         self.trainingDialog.exec_()
 
     def showTrainImagesDialog(self):
@@ -227,6 +243,17 @@ class App(QMainWindow):
                 'View Test Images', self.test_dataset)
             self.viewTrainImagesDialog.exec_()
 
+    def showModelSelectDialog(self):
+        self.modelSelectDialog = ModelSelectDialog(self.selectedModel)
+        self.modelSelectDialog.modelSelected.connect(self.selectModel)
+        self.modelSelectDialog.exec_()
+    
+    def model(self):
+        self.showModelSelectDialog()
+    
+    def selectModel(self, model: str):
+        self.selectedModel = model
+
     def clear(self):
         clear_canvas = QtGui.QPixmap(self.canvas.pixmap().size())
         clear_canvas.fill(QtGui.QColor("white"))
@@ -240,59 +267,52 @@ class App(QMainWindow):
             img = Image.new('L', (28,28), (255, 255, 255))
             img.save("user_drawing.png", "png")
 
-        if path.exists('./mnist_model.zip'):
-            model = Net()
-            model.load_state_dict(torch.load('./mnist_model.zip'))
-            model.eval()
+        if (self.selectedModel == 'PyTorch'):
+            if path.exists('./mnist_model.zip'):
+                model = Net()
+                model.load_state_dict(torch.load('./mnist_model.zip'))
+                model.eval()
 
-            img = Image.open('./images/user_drawing.png')
-            img = img.resize((28, 28))
-            img = img.convert('L')
-            img = np.invert(img)
-            img = np.split(img, 28)
-            img = np.array(img)
+                img = Image.open('./images/user_drawing.png')
+                img = img.resize((28, 28))
+                img = img.convert('L')
+                img = np.invert(img)
+                img = np.split(img, 28)
+                img = np.array(img)
 
-            # img = Image.open('./images/user_drawing.png', 'r')
-            # img = img.resize((28, 28))
-            # img.save('./images/user_drawing_1.png')
-            # img = img.convert('L')
-            # img = np.array(img)
-            # img = 255 - img
-            # gimg = Image.fromarray(img, 'L')
-            # gimg.save('./images/user_drawing_2.png')
-            # img = np.split(img, 28)
-            # img = np.array(img)
+                # img = Image.open('./images/user_drawing.png', 'r')
+                # img = img.resize((28, 28))
+                # img.save('./images/user_drawing_1.png')
+                # img = img.convert('L')
+                # img = np.array(img)
+                # img = 255 - img
+                # gimg = Image.fromarray(img, 'L')
+                # gimg.save('./images/user_drawing_2.png')
+                # img = np.split(img, 28)
+                # img = np.array(img)
 
-            output = model(torch.Tensor(img))
-            print(output)
+                output = model(torch.Tensor(img))
+                print(output)
 
-            self.plot_list(output.tolist()[0])
+                self.plot_list(output.tolist()[0])
 
-            prediction = torch.argmax(output)
-            print(prediction.item())
-            self.classDetected.setText(str(prediction.item()))
-        else:
-            imageSavedDialog = QMessageBox()
-            imageSavedDialog.setWindowTitle('Model missing')
-            imageSavedDialog.setIcon(QMessageBox.Critical)
-            imageSavedDialog.setText("You must first train a model by going to File > Train Model and click Train")
+                prediction = torch.argmax(output)
+                print(prediction.item())
+                self.classDetected.setText(str(prediction.item()))
+            else:
+                imageSavedDialog = QMessageBox()
+                imageSavedDialog.setWindowTitle('PyTorch model missing')
+                imageSavedDialog.setIcon(QMessageBox.Critical)
+                imageSavedDialog.setText("To use this model you must first train it by going to File > Train Model and clicking 'Train'")
 
-            imageSavedDialog.exec_()
-    
-    def init_plot(self):
-        self.figure = plt.figure()
-        self.graph = FigureCanvas(self.figure)
-        self.plot_list([0]*10)
+                imageSavedDialog.exec_()
+        elif (self.selectedModel == 'None'):
+            noModelDialog = QMessageBox()
+            noModelDialog.setWindowTitle('No model selected')
+            noModelDialog.setIcon(QMessageBox.Information)
+            noModelDialog.setText("You must select a model by clicking on the 'Model' button on the main screen")
 
-    def plot_list(self, prob_list):
-        self.figure.clear()
-        prob_list = [0 if i < 0 else i for i in prob_list]
-        ax = self.figure.add_subplot(111)
-        ax.barh(list(range(0, 10)), prob_list)
-        ax.set_yticks(list(range(0, 10)))
-        ax.set_xticks([])
-        self.graph.draw()
-
+            noModelDialog.exec_()
 
     def save(self, showDialog: bool):
         imgPath = './images'
