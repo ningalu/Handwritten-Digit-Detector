@@ -1,15 +1,19 @@
 from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QGridLayout
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtWidgets import QPushButton, QComboBox, QLabel
 from PyQt5.QtCore import Qt
 from PyQt5.QtCore import pyqtSignal
 
 class ModelSelectDialog(QDialog):
-    def __init__(self):
+    modelSelected = pyqtSignal(str)
+    modelSelectedFlag = 0
+
+    def __init__(self, appSelectedModel):
         super().__init__()
-        self.model = []
+        self.appSelectedModel = appSelectedModel
 
         self.initUI()
+        self.modelSelectedFlag = 1
 
     def initUI(self):
         self.setWindowTitle('Select Model')
@@ -36,6 +40,10 @@ class ModelSelectDialog(QDialog):
         self.modelList.addItem('PyTorch')
         self.modelList.currentIndexChanged.connect(self.emitModelPicked)
 
+        index = self.modelList.findText(self.appSelectedModel)
+        if (index != -1 ):
+            self.modelList.setCurrentIndex(index);
+
     def addWidgetsToWidgetLayouts(self):
         self.labelLayout.addWidget(self.modelListLabel)
         self.modelListLayout.addWidget(self.modelList)
@@ -49,5 +57,20 @@ class ModelSelectDialog(QDialog):
         self.setLayout(grid)
     
     def emitModelPicked(self):
-        pass
+        modelPicked = ''
+
+        if (self.modelList.currentText() == "None") :
+            modelPicked = "None"
+        elif (self.modelList.currentText() == "PyTorch"):
+            modelPicked = "PyTorch"
+
+        self.modelSelected.emit(modelPicked)
+
+        if (self.modelSelectedFlag == 1):
+            selectedDialog = QMessageBox()
+            selectedDialog.setWindowTitle('New model selected')
+            selectedDialog.setIcon(QMessageBox.NoIcon)
+            selectedDialog.setText(f"The '{modelPicked}' model has been selected.")
+
+            selectedDialog.exec_()
 
