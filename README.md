@@ -14,6 +14,39 @@ This is a project designed as an introduction to Machine Learning, GUI programmi
 
 ### Conda
 
+Create a virtual environment using conda with the following command
+
+```
+conda create -p ./path/to/virtual/environmentName
+```
+
+Place this repository into the root of the venv using ```git clone``` or by downloading it directly
+
+Navigate to the root of the venv and activate it
+
+```
+cd ./path/to/virtual/environmentName
+environmentName> conda activate environmentName
+```
+
+Navigate into the repo folder
+
+```
+environmentName> cd project-1-team_30
+```
+
+Install requirements using pip
+
+```
+environmentName\project-1-team_30> pip install -r requirements.txt
+```
+
+Run the program 
+
+```
+environmentName\project-1-team_30> python scripts
+```
+
 ### Python venv
 
 Create a virtual environment using Python with the following command
