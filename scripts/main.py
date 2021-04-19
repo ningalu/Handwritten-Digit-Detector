@@ -30,6 +30,10 @@ class App(QMainWindow):
         self.modelSelectDialog = 0
         self.viewTrainImagesDialog = 0
         self.viewTestImagesDialog = 0
+
+        if (path.exists('./mnist_model.zip')):
+            self.selectModel('PyTorch')
+
         self.initUI()
 
     def initUI(self):
@@ -175,14 +179,14 @@ class App(QMainWindow):
 
         self.classGraph = QLineEdit('Graph of class probability')
         
-        self.classDetected = QLineEdit('Class detected')
-        self.classDetected.setReadOnly(True)
-        self.classDetected.setAlignment(Qt.AlignCenter)
+        self.classDetectedLine = QLineEdit('Class detected')
+        self.classDetectedLine.setReadOnly(True)
+        self.classDetectedLine.setAlignment(Qt.AlignCenter)
 
         # Add widgets to the box
         self.classProbLayout.addWidget(self.classGraphLabel)
         self.classProbLayout.addWidget(self.graph)
-        self.classProbLayout.addWidget(self.classDetected)
+        self.classProbLayout.addWidget(self.classDetectedLine)
 
     def init_plot(self):
         self.figure = plt.figure()
@@ -264,7 +268,7 @@ class App(QMainWindow):
 
         if not path.exists('./images/'):
             makedirs('./images')
-            img = Image.new('L', (28,28), (255, 255, 255))
+            img = Image.new('L', (510,510), (255, 255, 255))
             img.save("user_drawing.png", "png")
 
         if (self.selectedModel == 'PyTorch'):
@@ -273,32 +277,66 @@ class App(QMainWindow):
                 model.load_state_dict(torch.load('./mnist_model.zip'))
                 model.eval()
 
-                img = Image.open('./images/user_drawing.png')
-                img = img.resize((28, 28))
-                img = img.convert('L')
-                img = np.invert(img)
-                img = np.split(img, 28)
-                img = np.array(img)
-
-                # img = Image.open('./images/user_drawing.png', 'r')
+                # img = Image.open('./images/user_drawing.png')
                 # img = img.resize((28, 28))
-                # img.save('./images/user_drawing_1.png')
                 # img = img.convert('L')
-                # img = np.array(img)
-                # img = 255 - img
-                # gimg = Image.fromarray(img, 'L')
-                # gimg.save('./images/user_drawing_2.png')
+                # img = np.invert(img)
                 # img = np.split(img, 28)
                 # img = np.array(img)
 
-                output = model(torch.Tensor(img))
-                print(output)
+                # PILim = Image.fromarray(img)
+                # PILim.save('./images/user_drawing.png')
 
-                self.plot_list(output.tolist()[0])
+                # Open the image the user drew, resize it to 28,28
+                img = Image.open('./images/user_drawing.png', 'r')
+                img = img.resize((28, 28))
+                print(img.size)
 
-                prediction = torch.argmax(output)
-                print(prediction.item())
-                self.classDetected.setText(str(prediction.item()))
+                # Convert the image to greyscale, then to a nparray, the invert it's colour (to be white on black)
+                img = img.convert('L')
+                img = np.array(img)
+                img = np.invert(img)
+
+                # Save how img currently looks (store it in the variable gimg)
+                gimg = Image.fromarray(img, 'L')
+                gimg.save('./images/user_drawing_input.png')
+
+                # Get the dimensions of the img array
+                numRows, numCols = img.shape
+
+                # Find the rows and cols of img that contain only zeros
+                zeroRows = []
+                for row in range(0, numRows - 1):
+                    if (not np.count_nonzero(img[row,:])):
+                        zeroRows.append(row)
+
+                zeroCols = []
+                for col in range(0, numCols):
+                    if (not np.count_nonzero(img[:,col])):
+                        zeroCols.append(col)
+
+                # Delete the rows and cols that are only zeros
+                img = np.delete(img, tuple(zeroRows), axis = 0)
+                img = np.delete(img, tuple(zeroCols), axis = 1)
+
+                print(len(zeroRows),' ', len(zeroCols))
+
+                # Save how img looks after removing black borders
+                gimg = Image.fromarray(img, 'L')
+                gimg.save('./images/user_drawing_zeros_removed.png')
+
+                img = np.split(img, len(img))
+                img = np.array(img)
+                # print(img)
+
+                # output = model(torch.Tensor(img))
+                # print(output)
+
+                # self.plot_list(output.tolist()[0])
+
+                # prediction = torch.argmax(output)
+                # print(prediction.item())
+                # self.classDetectedLine.setText(str(prediction.item()))
             else:
                 imageSavedDialog = QMessageBox()
                 imageSavedDialog.setWindowTitle('PyTorch model missing')
@@ -306,6 +344,7 @@ class App(QMainWindow):
                 imageSavedDialog.setText("To use this model you must first train it by going to File > Train Model and clicking 'Train'")
 
                 imageSavedDialog.exec_()
+
         elif (self.selectedModel == 'None'):
             noModelDialog = QMessageBox()
             noModelDialog.setWindowTitle('No model selected')
