@@ -107,7 +107,7 @@ class App(QMainWindow):
     def mouseMoveEvent(self, e):
         painter = QtGui.QPainter(self.canvas.pixmap())
         p = painter.pen()
-        p.setWidth(15)
+        p.setWidth(35)
         p.setCapStyle(0x20)
         
         painter.setPen(p)
@@ -277,19 +277,9 @@ class App(QMainWindow):
                 model.load_state_dict(torch.load('./mnist_model.zip'))
                 model.eval()
 
-                # img = Image.open('./images/user_drawing.png')
-                # img = img.resize((28, 28))
-                # img = img.convert('L')
-                # img = np.invert(img)
-                # img = np.split(img, 28)
-                # img = np.array(img)
-
-                # PILim = Image.fromarray(img)
-                # PILim.save('./images/user_drawing.png')
-
                 # Open the image the user drew, resize it to 28,28
                 img = Image.open('./images/user_drawing.png', 'r')
-                img = img.resize((28, 28))
+                img = img.resize((28, 28), Image.ANTIALIAS)
                 print(img.size)
 
                 # Convert the image to greyscale, then to a nparray, the invert it's colour (to be white on black)
@@ -315,9 +305,13 @@ class App(QMainWindow):
                     if (not np.count_nonzero(img[:,col])):
                         zeroCols.append(col)
 
-                # Delete the rows and cols that are only zeros
-                img = np.delete(img, tuple(zeroRows), axis = 0)
-                img = np.delete(img, tuple(zeroCols), axis = 1)
+                if (len(zeroCols) < 18):
+                    # Delete the rows and cols that are only zeros
+                    img = np.delete(img, tuple(zeroRows), axis = 0)
+                    img = np.delete(img, tuple(zeroCols), axis = 1)
+                else:
+                    img = np.delete(img, tuple(zeroRows), axis = 0)
+                    # img = np.delete(img, tuple(zeroCols), axis = 1)
 
                 print(len(zeroRows),' ', len(zeroCols))
 
@@ -327,7 +321,7 @@ class App(QMainWindow):
 
                 # Resize image to 20,20
                 img = Image.fromarray(img, 'L')
-                img = img.resize((20,20))
+                img = img.resize((20,20), Image.ANTIALIAS)
                 img.save('./images/user_drawing_zeros_removed_20.png')
 
                 # Create a blank 28,28 black image
