@@ -107,7 +107,7 @@ class App(QMainWindow):
     def mouseMoveEvent(self, e):
         painter = QtGui.QPainter(self.canvas.pixmap())
         p = painter.pen()
-        p.setWidth(40)
+        p.setWidth(15)
         p.setCapStyle(0x20)
         
         painter.setPen(p)
@@ -299,7 +299,7 @@ class App(QMainWindow):
 
                 # Save how img currently looks (store it in the variable gimg)
                 gimg = Image.fromarray(img, 'L')
-                gimg.save('./images/user_drawing_input.png')
+                gimg.save('./images/user_drawing_inverted.png')
 
                 # Get the dimensions of the img array
                 numRows, numCols = img.shape
@@ -325,18 +325,30 @@ class App(QMainWindow):
                 gimg = Image.fromarray(img, 'L')
                 gimg.save('./images/user_drawing_zeros_removed.png')
 
-                img = np.split(img, len(img))
-                img = np.array(img)
-                # print(img)
+                # Resize image to 20,20
+                img = Image.fromarray(img, 'L')
+                img = img.resize((20,20))
+                img.save('./images/user_drawing_zeros_removed_20.png')
 
-                # output = model(torch.Tensor(img))
-                # print(output)
+                # Create a blank 28,28 black image
+                newImg = Image.new('L', (28,28))
 
-                # self.plot_list(output.tolist()[0])
+                # Paste the 20,20 in the center to make the completed 28,28
+                newImg.paste(img, (4,4))
+                newImg.save('./images/input_image.png')
 
-                # prediction = torch.argmax(output)
-                # print(prediction.item())
-                # self.classDetectedLine.setText(str(prediction.item()))
+                # Convert back to np array
+                newImg = np.array(newImg)
+
+                output = model(torch.Tensor(newImg))
+                print(output)
+
+                self.plot_list(output.tolist()[0])
+
+                prediction = torch.argmax(output)
+                print(prediction.item())
+                self.classDetectedLine.setText(str(prediction.item()))
+
             else:
                 imageSavedDialog = QMessageBox()
                 imageSavedDialog.setWindowTitle('PyTorch model missing')
