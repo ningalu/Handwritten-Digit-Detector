@@ -322,4 +322,3 @@ class ViewImagesDialog(QDialog):
 
         # Also clear the newHBox to stop the last row from appearing
         self.newHBox = QHBoxLayout()
-
