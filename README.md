@@ -1,7 +1,7 @@
 # Handwritten Digit Recogniser
 This is a project designed as an introduction to Machine Learning, GUI programming, and virtual environments in Python using PyTorch and PyQt5. We make use of the MNIST dataset to train a model that recognises hand-drawn digits from 0-9.
 
-[A build of the program can be found here](https://drive.google.com/file/d/1QDlnSe2yea03O6RQfiuyrTP8XdiN1YTZ/view?usp=sharing)
+[A build of the program can be found here](https://drive.google.com/file/d/1VFNP28p9HTdPhUbAlT9KdHUDE8MV67dP/view?usp=sharing)
 
 ## Features
 
