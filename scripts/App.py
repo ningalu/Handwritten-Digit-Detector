@@ -260,11 +260,6 @@ class App(QMainWindow):
     def recognize(self):
         self.save(False)
 
-        if not path.exists('./images/'):
-            makedirs('./images')
-            img = Image.new('L', (510,510), (255, 255, 255))
-            img.save("user_drawing.png", "png")
-
         if (self.selectedModel == 'PyTorch'):
             if path.exists('./mnist_model.zip'):
                 model = Net()
@@ -352,8 +347,10 @@ class App(QMainWindow):
     def save(self, showDialog: bool):
         imgPath = './images'
 
-        if not path.exists(imgPath):
-            makedirs(imgPath)
+        if not path.exists('./images/'):
+            makedirs('./images')
+            img = Image.new('L', (510,510))
+            img.save("user_drawing.png", "png")
 
         self.canvas.pixmap().save(f"{imgPath}/user_drawing.png")
 
