@@ -1,7 +1,8 @@
 from __future__ import print_function
 
+from os import makedirs, path
+
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
 
 from torch import nn, optim, cuda, save
 from torch.utils import data
@@ -10,10 +11,7 @@ import torch.nn.functional as F
 from math import ceil
 import time
 
-from os import makedirs, path
-
 from Net import Net
-
 
 class TrainingWorker(QObject):
     progressText = pyqtSignal(str, bool)

@@ -1,14 +1,9 @@
 from __future__ import print_function
 
-from PyQt5.QtCore import QObject, QThread, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
-
 from torch import nn, optim, cuda
 from torch.utils import data
 from torchvision import datasets, transforms
 import torch.nn.functional as F
-from math import ceil
-import time
  
 class Net(nn.Module):
     def __init__(self):

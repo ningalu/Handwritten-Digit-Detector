@@ -41,10 +41,16 @@ Install requirements using pip
 environmentName\project-1-team_30> pip install -r requirements.txt
 ```
 
+Navigate to the scripts folder
+
+```
+environmentName\project-1-team_30> cd scripts
+```
+
 Run the program 
 
 ```
-environmentName\project-1-team_30> python scripts
+environmentName\project-1-team_30> python main.py
 ```
 
 ### Python venv
@@ -52,7 +58,7 @@ environmentName\project-1-team_30> python scripts
 Create a virtual environment using Python with the following command
 
 ```
-python venv -m ./path/to/virtual/environment
+python -m venv ./path/to/virtual/environment
 ```
 
 Place this repository into the root of the venv using ```git clone``` or by downloading it directly
@@ -72,8 +78,14 @@ venv> cd project-1-team-30
 venv\project-1-team-30> pip install -r requirements.txt
 ```
 
-Run main.py
+Navigate to the repo's scripts folder
 
 ```
-venv\project-1-team-30> python scripts
+venv\project-1-team_30> cd scripts
+```
+
+Run the program 
+
+```
+venv\project-1-team_30\scripts> python main.py
 ```

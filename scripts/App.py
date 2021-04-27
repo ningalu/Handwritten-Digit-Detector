@@ -1,3 +1,6 @@
+from os import makedirs, path
+import sys
+
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QWidget, QDesktopWidget, qApp, QHBoxLayout, QVBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QMenuBar, QPushButton, QLabel, QLineEdit, QFrame
 from PyQt5.QtWidgets import QMessageBox
@@ -11,9 +14,6 @@ from PIL import Image
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 import matplotlib.pyplot as plt
-
-from os import makedirs, path
-import sys
 
 from TrainingDialog import TrainingDialog
 from ViewImagesDialog import ViewImagesDialog
@@ -46,10 +46,7 @@ class App(QMainWindow):
         self.show()
 
     def centreWindow(self):
-        # qr = self.frameGeometry()
-        # cp = QDesktopWidget().availableGeometry().center()
-        # qr.moveCenter(cp)
-        # self.move(qr.topLeft())
+
         self.resize(720, 540)
 
     def createMenuBar(self):
@@ -145,9 +142,10 @@ class App(QMainWindow):
 
         # Create buttons
         self.clearButton = QPushButton('Clear')
-        self.clearButton.setShortcut('Ctrl+Z')
+        self.clearButton.setShortcut('Ctrl+C')
         self.clearButton.clicked.connect(self.clear)
         self.modelButton = QPushButton('Model')
+        self.modelButton.setShortcut('Ctrl+M')
         self.modelButton.clicked.connect(self.model)
         self.recognizeButton = QPushButton('Recognize')
         self.recognizeButton.setShortcut('Ctrl+R')
@@ -169,7 +167,7 @@ class App(QMainWindow):
         self.classGraphLabel = QLabel('Class Probability')
         self.classGraphLabel.setAlignment(Qt.AlignCenter)
 
-        self.init_plot()
+        self.initPlot()
 
         self.classGraph = QLineEdit('Graph of class probability')
         
@@ -182,12 +180,12 @@ class App(QMainWindow):
         self.classProbLayout.addWidget(self.graph)
         self.classProbLayout.addWidget(self.classDetectedLine)
 
-    def init_plot(self):
+    def initPlot(self):
         self.figure = plt.figure()
         self.graph = FigureCanvas(self.figure)
-        self.plot_list([0]*10)
+        self.plotList([0]*10)
 
-    def plot_list(self, prob_list):
+    def plotList(self, prob_list):
         self.figure.clear()
         prob_list = [0 if i < 0 else i for i in prob_list]
         ax = self.figure.add_subplot(111)
@@ -320,9 +318,9 @@ class App(QMainWindow):
                 newImg = np.array(newImg)
 
                 output = model(torch.Tensor(newImg))
-                print(output)
+                # print(output)
 
-                self.plot_list(output.tolist()[0])
+                self.plotList(output.tolist()[0])
 
                 prediction = torch.argmax(output)
                 print(f'Digit {prediction.item()} predicted')
@@ -345,19 +343,18 @@ class App(QMainWindow):
             noModelDialog.exec_()
 
     def save(self, showDialog: bool):
-        imgPath = './images'
 
         if not path.exists('./images/'):
             makedirs('./images')
             img = Image.new('L', (510,510))
-            img.save("user_drawing.png", "png")
+            img.save("./images/user_drawing.png", "png")
 
-        self.canvas.pixmap().save(f"{imgPath}/user_drawing.png")
+        self.canvas.pixmap().save(f"./images/user_drawing.png")
 
         if (showDialog):
             imageSavedDialog = QMessageBox()
             imageSavedDialog.setWindowTitle('Image saved')
             imageSavedDialog.setIcon(QMessageBox.Information)
-            imageSavedDialog.setText(f'Your drawing has been saved to "{imgPath}/user_drawing.png"')
+            imageSavedDialog.setText(f'Your drawing has been saved to "./images/user_drawing.png"')
 
             imageSavedDialog.exec_()

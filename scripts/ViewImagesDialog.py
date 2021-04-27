@@ -1,4 +1,5 @@
 import os
+
 from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout, QGridLayout, QStackedLayout
@@ -8,8 +9,8 @@ from PyQt5.QtCore import Qt
 from PIL import Image
 from PIL.ImageQt import ImageQt
 import numpy as np
-from math import ceil
 
+from math import ceil
 
 class ViewImagesDialog(QDialog):
     def __init__(self, title, dataset):

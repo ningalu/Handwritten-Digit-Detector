@@ -1,7 +1,9 @@
 from __future__ import print_function
-from math import ceil
 
 import sys
+
+from math import ceil
+
 from PyQt5.QtWidgets import QApplication, QWidget, qApp, QHBoxLayout, QVBoxLayout
 from PyQt5.QtWidgets import QDialog
 from PyQt5.QtWidgets import QPushButton, QTextEdit, QProgressBar
@@ -9,7 +11,6 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from torch import nn, optim, cuda
 from torchvision import datasets, transforms
-import time
 
 from TrainingWorker import TrainingWorker
 from Net import Net
