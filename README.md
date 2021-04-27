@@ -63,6 +63,12 @@ python -m venv ./path/to/virtual/environment
 
 Place this repository into the root of the venv using ```git clone``` or by downloading it directly
 
+Navigate to the root of the venv
+
+```
+cd ./path/to/virtual/environment
+```
+
 Navigate to the Scripts directory and activate the venv
 
 ```
